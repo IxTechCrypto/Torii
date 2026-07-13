@@ -1,0 +1,56 @@
+:root {
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  color: #0f0f0f;
+  background-color: #f6f6f6;
+}
+
+.container {
+  margin: 0 auto;
+  padding: 2rem;
+  max-width: 960px;
+}
+
+.screen-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.screen-nav-active {
+  font-weight: bold;
+}
+
+.scan-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.scan-table th,
+.scan-table td {
+  border: 1px solid #ccc;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+.row-installable {
+  cursor: pointer;
+}
+
+.row-installable:hover {
+  background-color: #eef6ff;
+}
+
+.row-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #b00020;
+}
+
+.selection-hint {
+  margin-top: 1rem;
+  font-style: italic;
+}
