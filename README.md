@@ -1,6 +1,9 @@
-# Tauri + React + Typescript
+# Torii
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+Desktop app (Tauri + React + TypeScript) that scans the LAN for
+Antminer-class miners and provisions them onto Mujina. See
+[STATUS.md](./STATUS.md) for what's built, what's verified, and how to run
+it.
 
 ## Recommended IDE Setup
 
