@@ -44,6 +44,11 @@ export default function ScanTable({ onSelect }: Props) {
       {error && <p className="error">{error}</p>}
 
       {records.length > 0 && (
+        <>
+        <p className="scan-hint">
+          Only stock Bitmain firmware can be installed onto. Other rows are shown for
+          visibility but greyed out and not selectable.
+        </p>
         <table className="scan-table">
           <thead>
             <tr>
@@ -72,12 +77,13 @@ export default function ScanTable({ onSelect }: Props) {
                   <td>{r.firmware}</td>
                   <td>{r.control_board}</td>
                   <td>{r.chip ?? "-"}</td>
-                  <td>{r.install_hint.ready ? "yes" : "no"}</td>
+                  <td>{installable && r.install_hint.ready ? "yes" : "no"}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        </>
       )}
     </div>
   );

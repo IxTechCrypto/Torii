@@ -49,9 +49,11 @@ export default function InstallLog({ config, onDone }: Props) {
   return (
     <div>
       <h2>Installing on {config.host}</h2>
-      <pre ref={preRef} className="install-log">
-        {lines.join("\n")}
-      </pre>
+      <div className="install-log-frame">
+        <pre ref={preRef} className="install-log">
+          {lines.join("\n")}
+        </pre>
+      </div>
       {exitCode !== null && <p>Install script exited with code {exitCode}.</p>}
     </div>
   );

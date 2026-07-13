@@ -52,6 +52,13 @@ function App() {
   return (
     <main className="container">
       <div className="hud-frame">
+        <div className="hud-tick-row" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
         <header className="app-header">
           <img src="/torii-icon.svg" alt="" className="app-logo" />
           <h1>Torii</h1>
