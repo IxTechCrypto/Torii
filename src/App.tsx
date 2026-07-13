@@ -1,20 +1,52 @@
 import { useState } from "react";
 import ScanTable from "./components/ScanTable";
-import type { HostRecord } from "./types";
+import ConfigForm from "./components/ConfigForm";
+import ConfirmModal from "./components/ConfirmModal";
+import InstallLog from "./components/InstallLog";
+import TelemetryView from "./components/TelemetryView";
+import { preview } from "./api";
+import type { HostRecord, InstallConfig } from "./types";
 import "./styles.css";
 
 type Screen = "scan" | "config" | "installing" | "telemetry";
 
 function App() {
   const [screen, setScreen] = useState<Screen>("scan");
-  // Placeholder selection state; Worker B wires the real scan -> config
-  // transition and consumes this.
   const [selected, setSelected] = useState<{ record: HostRecord; scanFile: string } | null>(null);
+  const [pendingConfig, setPendingConfig] = useState<InstallConfig | null>(null);
+  const [previewText, setPreviewText] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [installConfig, setInstallConfig] = useState<InstallConfig | null>(null);
 
   function handleSelect(record: HostRecord, scanFile: string) {
-    console.log("selected installable host", record, scanFile);
     setSelected({ record, scanFile });
-    // TODO(Worker B): setScreen("config");
+    setScreen("config");
+  }
+
+  async function handleConfigSubmit(config: InstallConfig) {
+    setPreviewError(null);
+    try {
+      const text = await preview(config.scan_file, config.host);
+      setPendingConfig(config);
+      setPreviewText(text);
+    } catch (e) {
+      setPreviewError(String(e));
+    }
+  }
+
+  function handleConfirm() {
+    setInstallConfig(pendingConfig);
+    setPreviewText(null);
+    setScreen("installing");
+  }
+
+  function handleCancelPreview() {
+    setPendingConfig(null);
+    setPreviewText(null);
+  }
+
+  function handleInstallDone(_exitCode: number) {
+    setScreen("telemetry");
   }
 
   return (
@@ -34,16 +66,42 @@ function App() {
       </nav>
 
       {screen === "scan" && <ScanTable onSelect={handleSelect} />}
-      {screen === "config" && <div>TODO: screen config (Worker B)</div>}
-      {screen === "installing" && <div>TODO: screen installing (Worker B)</div>}
-      {screen === "telemetry" && <div>TODO: screen telemetry (Worker B)</div>}
 
-      {selected && screen === "scan" && (
-        <p className="selection-hint">
-          Selected {selected.record.host} ({selected.record.model ?? "unknown model"}) — config
-          screen not wired yet.
-        </p>
-      )}
+      {screen === "config" &&
+        (selected ? (
+          <>
+            <ConfigForm
+              record={selected.record}
+              scanFile={selected.scanFile}
+              onSubmit={handleConfigSubmit}
+              onBack={() => setScreen("scan")}
+            />
+            {previewError && <p className="error">{previewError}</p>}
+            {previewText !== null && (
+              <ConfirmModal
+                previewText={previewText}
+                onConfirm={handleConfirm}
+                onCancel={handleCancelPreview}
+              />
+            )}
+          </>
+        ) : (
+          <p>No host selected — go back to the scan screen and pick one.</p>
+        ))}
+
+      {screen === "installing" &&
+        (installConfig ? (
+          <InstallLog config={installConfig} onDone={handleInstallDone} />
+        ) : (
+          <p>No install configured yet.</p>
+        ))}
+
+      {screen === "telemetry" &&
+        (selected ? (
+          <TelemetryView ip={selected.record.host} />
+        ) : (
+          <p>No host selected.</p>
+        ))}
     </main>
   );
 }

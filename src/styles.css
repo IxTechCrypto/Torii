@@ -54,3 +54,112 @@
   margin-top: 1rem;
   font-style: italic;
 }
+
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 480px;
+}
+
+.config-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.config-form small {
+  color: #666;
+  font-weight: normal;
+}
+
+.config-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.confirm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-modal {
+  background: #fff;
+  border: 2px solid #b00020;
+  border-radius: 6px;
+  padding: 1.5rem;
+  max-width: 600px;
+  width: 90%;
+}
+
+.confirm-modal-title {
+  color: #b00020;
+  margin-top: 0;
+}
+
+.confirm-modal-preview {
+  max-height: 300px;
+  overflow: auto;
+  background: #f6f6f6;
+  border: 1px solid #ccc;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.confirm-modal-danger {
+  background: #b00020;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.install-log {
+  max-height: 400px;
+  overflow: auto;
+  background: #111;
+  color: #0f0;
+  padding: 0.75rem;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+.telemetry-error {
+  color: #b00020;
+}
+
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.telemetry-stat {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+}
+
+.telemetry-stat-label {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.telemetry-stat-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
