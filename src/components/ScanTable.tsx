@@ -34,8 +34,8 @@ export default function ScanTable({ onSelect }: Props) {
           type="text"
           value={cidr}
           onChange={(e) => setCidr(e.target.value)}
-          placeholder="auto-detect local /24"
-          title="Override subnet, e.g. 192.168.4.0/24 — needed if a VPN is active, since auto-detect follows the default route"
+          placeholder="blank = auto-detect local /24"
+          title="Leave blank for auto-detect (needed if a VPN is active, since auto-detect follows the default route), or enter a single host (192.168.4.226) or a CIDR block (192.168.4.0/24)"
         />
         <button onClick={runScan} disabled={loading}>
           {loading ? "Scanning..." : "Scan"}

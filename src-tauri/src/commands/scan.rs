@@ -67,12 +67,22 @@ pub async fn scan(
     let scan_file = cache_dir.join("last-scan.json");
     let scan_file_str = scan_file.to_string_lossy().to_string();
 
-    let timeout_ms = timeout_ms.unwrap_or(800);
+    // A /24 sweep under system load (Vite/cargo running alongside it) can
+    // push a slow-to-respond host past a tight timeout; 800ms occasionally
+    // dropped a real device. 1500ms costs at most ~0.7s more wall-clock on
+    // a full sweep and gives real hardware more margin.
+    let timeout_ms = timeout_ms.unwrap_or(1500);
 
     let mut cmd = Command::new(SCAN_BIN);
     match cidr {
-        Some(cidr) => {
-            cmd.arg("--cidr").arg(cidr);
+        // A bare IP (no "/") isn't a valid --cidr argument to mujina-scan,
+        // which requires CIDR notation — route it through --host instead so
+        // typing a single miner's address just works.
+        Some(target) if target.contains('/') => {
+            cmd.arg("--cidr").arg(target);
+        }
+        Some(host) => {
+            cmd.arg("--host").arg(host);
         }
         None => {
             cmd.arg("--auto");
