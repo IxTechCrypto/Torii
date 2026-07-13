@@ -43,8 +43,55 @@ body {
 
 .container {
   margin: 0 auto;
-  padding: 2rem;
+  padding: 2rem 1.5rem;
   max-width: 960px;
+}
+
+/* --- HUD frame: the sci-fi console border wrapping the whole app --- */
+
+.hud-frame {
+  position: relative;
+  border: 2px solid var(--cyan);
+  background: rgba(4, 12, 15, 0.55);
+  padding: 2rem 2.5rem 2.75rem 2rem;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 242, 0.3)) drop-shadow(0 0 28px rgba(0, 255, 242, 0.12));
+  clip-path: polygon(
+    18px 0,
+    calc(100% - 18px) 0,
+    100% 18px,
+    100% calc(100% - 36px),
+    calc(100% - 96px) calc(100% - 36px),
+    calc(100% - 96px) 100%,
+    18px 100%,
+    0 calc(100% - 18px),
+    0 18px
+  );
+}
+
+/* diagonal accent stripes on the top edge, near the left cut */
+.hud-frame::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 34px;
+  width: 62px;
+  height: 15px;
+  background: repeating-linear-gradient(115deg, var(--cyan) 0 3px, transparent 3px 9px);
+  clip-path: polygon(8% 100%, 28% 0, 100% 0, 80% 100%);
+  pointer-events: none;
+}
+
+/* tick-mark row sitting inside the bottom-right notch */
+.hud-frame::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  bottom: 9px;
+  width: 64px;
+  height: 12px;
+  background-image: repeating-linear-gradient(90deg, var(--cyan) 0 7px, transparent 7px 13px);
+  opacity: 0.85;
+  pointer-events: none;
 }
 
 /* --- header / branding --- */
@@ -163,15 +210,29 @@ input:focus {
 
 .screen-nav {
   display: flex;
-  gap: 0.5rem;
+  gap: 3px;
   margin-bottom: 1.5rem;
 }
 
+.screen-nav button {
+  padding: 0.4rem 0.85rem;
+  min-width: 84px;
+  font-size: 0.7rem;
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+}
+
 .screen-nav-active {
-  background: rgba(255, 43, 214, 0.12);
-  border-color: var(--magenta);
-  color: var(--magenta);
-  box-shadow: 0 0 12px rgba(255, 43, 214, 0.4);
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: #04141a;
+  font-weight: 700;
+  box-shadow: none;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 242, 0.6));
+}
+
+.screen-nav-active:hover {
+  background: var(--cyan);
+  box-shadow: none;
 }
 
 /* --- scan controls --- */

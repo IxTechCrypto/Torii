@@ -51,60 +51,62 @@ function App() {
 
   return (
     <main className="container">
-      <header className="app-header">
-        <img src="/torii-icon.svg" alt="" className="app-logo" />
-        <h1>Torii</h1>
-      </header>
+      <div className="hud-frame">
+        <header className="app-header">
+          <img src="/torii-icon.svg" alt="" className="app-logo" />
+          <h1>Torii</h1>
+        </header>
 
-      <nav className="screen-nav">
-        {(["scan", "config", "installing", "telemetry"] as Screen[]).map((s) => (
-          <button
-            key={s}
-            className={s === screen ? "screen-nav-active" : ""}
-            onClick={() => setScreen(s)}
-          >
-            {s}
-          </button>
-        ))}
-      </nav>
+        <nav className="screen-nav">
+          {(["scan", "config", "installing", "telemetry"] as Screen[]).map((s) => (
+            <button
+              key={s}
+              className={s === screen ? "screen-nav-active" : ""}
+              onClick={() => setScreen(s)}
+            >
+              {s}
+            </button>
+          ))}
+        </nav>
 
-      {screen === "scan" && <ScanTable onSelect={handleSelect} />}
+        {screen === "scan" && <ScanTable onSelect={handleSelect} />}
 
-      {screen === "config" &&
-        (selected ? (
-          <>
-            <ConfigForm
-              record={selected.record}
-              scanFile={selected.scanFile}
-              onSubmit={handleConfigSubmit}
-              onBack={() => setScreen("scan")}
-            />
-            {previewError && <p className="error">{previewError}</p>}
-            {previewText !== null && (
-              <ConfirmModal
-                previewText={previewText}
-                onConfirm={handleConfirm}
-                onCancel={handleCancelPreview}
+        {screen === "config" &&
+          (selected ? (
+            <>
+              <ConfigForm
+                record={selected.record}
+                scanFile={selected.scanFile}
+                onSubmit={handleConfigSubmit}
+                onBack={() => setScreen("scan")}
               />
-            )}
-          </>
-        ) : (
-          <p>No host selected — go back to the scan screen and pick one.</p>
-        ))}
+              {previewError && <p className="error">{previewError}</p>}
+              {previewText !== null && (
+                <ConfirmModal
+                  previewText={previewText}
+                  onConfirm={handleConfirm}
+                  onCancel={handleCancelPreview}
+                />
+              )}
+            </>
+          ) : (
+            <p>No host selected — go back to the scan screen and pick one.</p>
+          ))}
 
-      {screen === "installing" &&
-        (installConfig ? (
-          <InstallLog config={installConfig} onDone={handleInstallDone} />
-        ) : (
-          <p>No install configured yet.</p>
-        ))}
+        {screen === "installing" &&
+          (installConfig ? (
+            <InstallLog config={installConfig} onDone={handleInstallDone} />
+          ) : (
+            <p>No install configured yet.</p>
+          ))}
 
-      {screen === "telemetry" &&
-        (selected ? (
-          <TelemetryView ip={selected.record.host} />
-        ) : (
-          <p>No host selected.</p>
-        ))}
+        {screen === "telemetry" &&
+          (selected ? (
+            <TelemetryView ip={selected.record.host} />
+          ) : (
+            <p>No host selected.</p>
+          ))}
+      </div>
     </main>
   );
 }
