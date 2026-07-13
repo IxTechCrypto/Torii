@@ -28,7 +28,9 @@ export default function ConfigForm({ record, scanFile, onSubmit, onBack }: Props
   }
 
   return (
-    <form onSubmit={handleSubmit} className="config-form">
+    <div className="config-form-wrap">
+      <div className="config-form-ring" aria-hidden="true" />
+      <form onSubmit={handleSubmit} className="config-form">
       <h2>Configure {record.host}</h2>
       <p>
         Model: {record.model ?? "unknown"} · Control board: {record.control_board}
@@ -76,6 +78,7 @@ export default function ConfigForm({ record, scanFile, onSubmit, onBack }: Props
         </button>
         <button type="submit">Preview install</button>
       </div>
-    </form>
+      </form>
+    </div>
   );
 }

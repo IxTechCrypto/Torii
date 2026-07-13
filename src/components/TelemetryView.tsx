@@ -63,9 +63,12 @@ export default function TelemetryView({ ip }: Props) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="telemetry-stat">
-      <div className="telemetry-stat-label">{label}</div>
-      <div className="telemetry-stat-value">{value}</div>
+    <div className="telemetry-stat-wrap">
+      <div className="telemetry-stat-ring" aria-hidden="true" />
+      <div className="telemetry-stat">
+        <div className="telemetry-stat-label">{label}</div>
+        <div className="telemetry-stat-value">{value}</div>
+      </div>
     </div>
   );
 }

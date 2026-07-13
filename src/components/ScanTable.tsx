@@ -49,7 +49,9 @@ export default function ScanTable({ onSelect }: Props) {
           Only stock Bitmain firmware can be installed onto. Other rows are shown for
           visibility but greyed out and not selectable.
         </p>
-        <table className="scan-table">
+        <div className="scan-table-wrap">
+          <div className="scan-table-ring" aria-hidden="true" />
+          <table className="scan-table">
           <thead>
             <tr>
               <th>Host</th>
@@ -82,7 +84,8 @@ export default function ScanTable({ onSelect }: Props) {
               );
             })}
           </tbody>
-        </table>
+          </table>
+        </div>
         </>
       )}
     </div>

@@ -71,23 +71,23 @@ body {
    clip-path only cuts the box's painted output; it does NOT draw a border
    stroke along the new diagonal edges (border-following-clip-path is not a
    thing in CSS), so a plain `border` on a clipped box leaves a gap at every
-   cut corner. Fixed everywhere in this file with the same trick: the real
-   element is the "face" (opaque background, clipped to the intended
-   shape), and a ::before sized a couple px larger via a negative `inset`,
-   filled with the border color and clipped to the SAME shape, sits behind
-   it at z-index -1 — the face covers the middle, the ::before peeks out
-   uniformly around every edge including the diagonals, reading as a solid
-   outline. */
+   cut corner. Fixed with a two-layer sibling structure instead of a
+   negative-z-index pseudo-element: a `.hud-frame-ring` div (larger,
+   ring-colored, clipped to the shape) sits BEFORE `.hud-frame` (the
+   opaque "face", same clip-path) in the DOM. Both are `position`ed with
+   z-index left at auto, so plain DOM order decides paint order — the ring
+   paints first/bottom, the face paints second/on top, and the face
+   covers everywhere except a uniform collar around every edge, including
+   the diagonal cuts.
+   (A ::before pseudo on the SAME element the ring needs to hide behind
+   does NOT work: an element's own background is stacking-context layer 0,
+   and any child — including negative z-index ones — paints above that
+   layer within the element's own context, not below it. That's the
+   opposite of what a "border ring" needs, which is why this uses two real
+   sibling elements instead.) */
 
-.hud-frame {
+.hud-frame-wrap {
   position: relative;
-  isolation: isolate;
-  /* Must be fully opaque: the ring trick (see comment above) puts a solid
-     cyan ::before directly behind this element, and a translucent
-     background here lets that cyan bleed through the whole interior
-     instead of staying confined to the edge ring. */
-  background: #060d10;
-  padding: 2rem 2.5rem 2.75rem 2rem;
   filter: drop-shadow(0 0 10px rgba(0, 255, 242, 0.3)) drop-shadow(0 0 28px rgba(0, 255, 242, 0.12));
   --hud-shape: polygon(
     18px 0,
@@ -100,20 +100,24 @@ body {
     0 calc(100% - 18px),
     0 18px
   );
-  clip-path: var(--hud-shape);
 }
 
-.hud-frame::before {
-  content: "";
+.hud-frame-ring {
   position: absolute;
   inset: -2px;
-  z-index: -1;
   background: var(--cyan);
   clip-path: var(--hud-shape);
 }
 
+.hud-frame {
+  position: relative;
+  background: #060d10;
+  padding: 2rem 2.5rem 2.75rem 2rem;
+  clip-path: var(--hud-shape);
+}
+
 /* diagonal accent stripes on the top edge, near the left cut */
-.hud-frame::after {
+.hud-frame::before {
   content: "";
   position: absolute;
   top: -2px;
@@ -179,26 +183,18 @@ p {
   color: var(--text-dim);
 }
 
-/* --- chamfered surfaces --- */
+/* --- chamfered surfaces ---
+   Small controls (buttons/inputs) deliberately have NO border/ring here —
+   only a clipped, opaque fill plus a drop-shadow glow on hover/focus
+   (filter respects the clipped silhouette; border/box-shadow don't, see
+   the .hud-frame comment above). That sidesteps the whole
+   border-vs-clip-path problem for the many small elements where a
+   dedicated ring sibling per instance isn't worth it. */
 
 button,
 input,
 select {
-  position: relative;
-  isolation: isolate;
   clip-path: var(--shape-sm);
-}
-
-/* the ring: see the comment above .hud-frame for why this exists */
-button::before,
-input::before,
-select::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  z-index: -1;
-  clip-path: var(--shape-sm);
-  background: var(--cyan-dim);
 }
 
 /* --- form controls --- */
@@ -216,12 +212,8 @@ button {
 }
 
 button:hover:not(:disabled) {
-  background: rgba(0, 255, 242, 0.1);
-  filter: drop-shadow(0 0 8px rgba(0, 255, 242, 0.35));
-}
-
-button:hover:not(:disabled)::before {
-  background: var(--cyan);
+  background: rgba(0, 255, 242, 0.16);
+  filter: drop-shadow(0 0 8px rgba(0, 255, 242, 0.45));
 }
 
 button:disabled {
@@ -237,16 +229,9 @@ input {
   font-size: 0.9rem;
 }
 
-input::before {
-  background: var(--border);
-}
-
 input:focus {
   outline: none;
-}
-
-input:focus::before {
-  background: var(--cyan);
+  filter: drop-shadow(0 0 8px rgba(0, 255, 242, 0.4));
 }
 
 /* --- nav --- */
@@ -255,18 +240,13 @@ input:focus::before {
   display: flex;
   gap: 3px;
   margin-bottom: 1.5rem;
-  --shape-nav: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
 }
 
 .screen-nav button {
   padding: 0.4rem 0.85rem;
   min-width: 84px;
   font-size: 0.7rem;
-  clip-path: var(--shape-nav);
-}
-
-.screen-nav button::before {
-  clip-path: var(--shape-nav);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
 }
 
 .screen-nav-active {
@@ -274,11 +254,6 @@ input:focus::before {
   color: #04141a;
   font-weight: 700;
   filter: drop-shadow(0 0 8px rgba(0, 255, 242, 0.6));
-}
-
-.screen-nav-active::before {
-  /* solid fill already covers its own shape fully; no ring needed */
-  content: none;
 }
 
 .screen-nav-active:hover {
@@ -306,23 +281,24 @@ input:focus::before {
 
 /* --- scan table --- */
 
-.scan-table {
+.scan-table-wrap {
   position: relative;
-  isolation: isolate;
-  width: 100%;
-  border-collapse: collapse;
   margin-top: 1rem;
-  background: var(--bg-panel);
-  clip-path: var(--shape-lg);
 }
 
-.scan-table::before {
-  content: "";
+.scan-table-ring {
   position: absolute;
   inset: -1px;
-  z-index: -1;
   clip-path: var(--shape-lg);
   background: var(--border);
+}
+
+.scan-table {
+  position: relative;
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-panel);
+  clip-path: var(--shape-lg);
 }
 
 .scan-table th,
@@ -370,26 +346,27 @@ input:focus::before {
 
 /* --- config form --- */
 
+.config-form-wrap {
+  position: relative;
+  max-width: 480px;
+  margin-top: 1rem;
+}
+
+.config-form-ring {
+  position: absolute;
+  inset: -1px;
+  clip-path: var(--shape-lg);
+  background: var(--border);
+}
+
 .config-form {
   position: relative;
-  isolation: isolate;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  max-width: 480px;
   background: var(--bg-panel);
   padding: 1.25rem 1.5rem;
-  margin-top: 1rem;
   clip-path: var(--shape-lg);
-}
-
-.config-form::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  z-index: -1;
-  clip-path: var(--shape-lg);
-  background: var(--border);
 }
 
 .config-form label {
@@ -429,24 +406,25 @@ input:focus::before {
   z-index: 10;
 }
 
-.confirm-modal {
+.confirm-modal-wrap {
   position: relative;
-  isolation: isolate;
-  background: var(--bg-panel);
-  filter: drop-shadow(0 0 16px rgba(255, 32, 80, 0.4)) drop-shadow(0 0 40px rgba(255, 32, 80, 0.18));
-  padding: 1.5rem 1.75rem;
   max-width: 600px;
   width: 90%;
-  clip-path: var(--shape-lg);
+  filter: drop-shadow(0 0 16px rgba(255, 32, 80, 0.4)) drop-shadow(0 0 40px rgba(255, 32, 80, 0.18));
 }
 
-.confirm-modal::before {
-  content: "";
+.confirm-modal-ring {
   position: absolute;
   inset: -1px;
-  z-index: -1;
   clip-path: var(--shape-lg);
   background: var(--danger);
+}
+
+.confirm-modal {
+  position: relative;
+  background: var(--bg-panel);
+  padding: 1.5rem 1.75rem;
+  clip-path: var(--shape-lg);
 }
 
 .confirm-modal-title {
@@ -474,23 +452,15 @@ input:focus::before {
 }
 
 .confirm-modal-danger {
-  background: rgba(255, 32, 80, 0.12);
+  background: rgba(255, 32, 80, 0.18);
   color: var(--danger);
   padding: 0.55rem 0.9rem;
   font-weight: 700;
 }
 
-.confirm-modal-danger::before {
-  background: var(--danger);
-}
-
 .confirm-modal-danger:hover:not(:disabled) {
-  background: rgba(255, 32, 80, 0.22);
+  background: rgba(255, 32, 80, 0.3);
   filter: drop-shadow(0 0 12px rgba(255, 32, 80, 0.55));
-}
-
-.confirm-modal-danger:hover:not(:disabled)::before {
-  background: var(--danger);
 }
 
 /* --- install log --- */
@@ -542,21 +512,22 @@ input:focus::before {
   margin-top: 1rem;
 }
 
+.telemetry-stat-wrap {
+  position: relative;
+}
+
+.telemetry-stat-ring {
+  position: absolute;
+  inset: -1px;
+  clip-path: var(--shape-lg);
+  background: var(--border);
+}
+
 .telemetry-stat {
   position: relative;
-  isolation: isolate;
   background: var(--bg-panel);
   padding: 0.65rem 0.85rem;
   clip-path: var(--shape-lg);
-}
-
-.telemetry-stat::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  z-index: -1;
-  clip-path: var(--shape-lg);
-  background: var(--border);
 }
 
 .telemetry-stat-label {

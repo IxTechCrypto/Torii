@@ -51,7 +51,9 @@ function App() {
 
   return (
     <main className="container">
-      <div className="hud-frame">
+      <div className="hud-frame-wrap">
+        <div className="hud-frame-ring" aria-hidden="true" />
+        <div className="hud-frame">
         <div className="hud-tick-row" aria-hidden="true">
           <span />
           <span />
@@ -113,6 +115,7 @@ function App() {
           ) : (
             <p>No host selected.</p>
           ))}
+        </div>
       </div>
     </main>
   );
