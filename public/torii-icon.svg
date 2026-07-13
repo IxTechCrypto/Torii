@@ -1,0 +1,39 @@
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- top cap -->
+  <path d="M64,148
+           C40,148 28,132 32,112
+           C35,97 50,88 68,92
+           L128,116
+           L372,116
+           L432,92
+           C450,88 465,97 468,112
+           C472,132 460,148 436,148
+           L400,148 L400,172 L100,172 L100,148 Z"
+        fill="#4b3f4c" stroke="#161318" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- second crossbar with two window cutouts around the center post -->
+  <path d="M96,168
+           L404,168
+           L404,204
+           L96,204 Z
+           M150,172 L150,200 L215,200 L215,172 Z
+           M285,172 L285,200 L350,200 L350,172 Z"
+        fill="#f2887c" stroke="#161318" stroke-width="10" stroke-linejoin="round" fill-rule="evenodd"/>
+
+  <!-- center post connecting cap to crossbar -->
+  <rect x="234" y="150" width="32" height="54" fill="#f2887c" stroke="#161318" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- left pillar -->
+  <path d="M162,198 L200,198 L192,398 L170,398 Z"
+        fill="#f2887c" stroke="#161318" stroke-width="12" stroke-linejoin="round"/>
+  <!-- left foot -->
+  <rect x="150" y="396" width="62" height="26" rx="6" fill="#1c1a20" stroke="#161318" stroke-width="8"/>
+
+  <!-- right pillar -->
+  <path d="M300,198 L338,198 L330,398 L308,398 Z"
+        fill="#f2887c" stroke="#161318" stroke-width="12" stroke-linejoin="round"/>
+  <!-- subtle highlight accent on the right pillar, matching the reference -->
+  <path d="M312,260 L322,300" stroke="#e0685a" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+  <!-- right foot -->
+  <rect x="288" y="396" width="62" height="26" rx="6" fill="#1c1a20" stroke="#161318" stroke-width="8"/>
+</svg>

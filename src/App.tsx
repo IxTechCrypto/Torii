@@ -51,7 +51,10 @@ function App() {
 
   return (
     <main className="container">
-      <h1>Torii</h1>
+      <header className="app-header">
+        <img src="/torii-icon.svg" alt="" className="app-logo" />
+        <h1>Torii</h1>
+      </header>
 
       <nav className="screen-nav">
         {(["scan", "config", "installing", "telemetry"] as Screen[]).map((s) => (
