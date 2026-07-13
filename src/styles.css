@@ -82,7 +82,11 @@ body {
 .hud-frame {
   position: relative;
   isolation: isolate;
-  background: rgba(4, 12, 15, 0.55);
+  /* Must be fully opaque: the ring trick (see comment above) puts a solid
+     cyan ::before directly behind this element, and a translucent
+     background here lets that cyan bleed through the whole interior
+     instead of staying confined to the edge ring. */
+  background: #060d10;
   padding: 2rem 2.5rem 2.75rem 2rem;
   filter: drop-shadow(0 0 10px rgba(0, 255, 242, 0.3)) drop-shadow(0 0 28px rgba(0, 255, 242, 0.12));
   --hud-shape: polygon(
