@@ -89,11 +89,23 @@ pub async fn install(app: tauri::AppHandle, config: InstallConfig) -> Result<i32
         .spawn()
         .map_err(|e| format!("failed to spawn install script: {e}"))?;
 
+    // Drain stderr on its own thread so a script that writes a lot to stderr
+    // can't fill the OS pipe buffer and deadlock against the stdout read loop
+    // below.
+    let stderr = child.stderr.take().ok_or("failed to capture stderr")?;
+    let stderr_app = app.clone();
+    let stderr_thread = std::thread::spawn(move || {
+        for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+            let _ = stderr_app.emit("install://log", format!("[stderr] {line}"));
+        }
+    });
+
     let stdout = child.stdout.take().ok_or("failed to capture stdout")?;
     for line in BufReader::new(stdout).lines() {
         let line = line.map_err(|e| format!("error reading install output: {e}"))?;
         let _ = app.emit("install://log", line);
     }
+    let _ = stderr_thread.join();
 
     let status = child
         .wait()
