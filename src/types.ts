@@ -13,10 +13,12 @@ export interface InstallHint {
 }
 
 // Mirrors mujina-scan's `Firmware` enum (`#[serde(rename_all = "kebab-case")]`).
-// Only "stock-bitmain" is installable.
+// Only "stock-bitmain" is installable. Note "lux-os" (not "luxos") — the
+// Rust enum variant is `LuxOs`, which kebab-cases on the capital-letter
+// boundary.
 export type Firmware =
   | "stock-bitmain"
-  | "luxos"
+  | "lux-os"
   | "braiins"
   | "unknown-cgminer"
   | "unknown";

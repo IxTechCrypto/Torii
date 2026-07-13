@@ -11,12 +11,13 @@ export default function ScanTable({ onSelect }: Props) {
   const [scanFile, setScanFile] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cidr, setCidr] = useState("");
 
   async function runScan() {
     setLoading(true);
     setError(null);
     try {
-      const result = await scan();
+      const result = await scan(cidr.trim() || undefined);
       setRecords(result.records);
       setScanFile(result.scan_file);
     } catch (e) {
@@ -28,9 +29,18 @@ export default function ScanTable({ onSelect }: Props) {
 
   return (
     <div>
-      <button onClick={runScan} disabled={loading}>
-        {loading ? "Scanning..." : "Scan"}
-      </button>
+      <div className="scan-controls">
+        <input
+          type="text"
+          value={cidr}
+          onChange={(e) => setCidr(e.target.value)}
+          placeholder="auto-detect local /24"
+          title="Override subnet, e.g. 192.168.4.0/24 — needed if a VPN is active, since auto-detect follows the default route"
+        />
+        <button onClick={runScan} disabled={loading}>
+          {loading ? "Scanning..." : "Scan"}
+        </button>
+      </div>
       {error && <p className="error">{error}</p>}
 
       {records.length > 0 && (
