@@ -17,6 +17,7 @@ function App() {
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [installConfig, setInstallConfig] = useState<InstallConfig | null>(null);
+  const [installExitCode, setInstallExitCode] = useState<number | null>(null);
 
   function handleSelect(record: HostRecord, scanFile: string) {
     setSelected({ record, scanFile });
@@ -36,6 +37,7 @@ function App() {
 
   function handleConfirm() {
     setInstallConfig(pendingConfig);
+    setInstallExitCode(null);
     setPreviewText(null);
     setScreen("installing");
   }
@@ -45,8 +47,27 @@ function App() {
     setPreviewText(null);
   }
 
-  function handleInstallDone(_exitCode: number) {
-    setScreen("telemetry");
+  function handleInstallDone(exitCode: number) {
+    setInstallExitCode(exitCode);
+    if (exitCode === 0) {
+      setScreen("telemetry");
+    }
+  }
+
+  function isScreenReachable(s: Screen): boolean {
+    switch (s) {
+      case "scan":
+        return true;
+      case "config":
+        return selected !== null;
+      case "installing":
+        // Disabled once an install has succeeded — re-entering would remount
+        // InstallLog and re-run the installer against a board that's already
+        // been flashed.
+        return installConfig !== null && installExitCode !== 0;
+      case "telemetry":
+        return installExitCode === 0;
+    }
   }
 
   return (
@@ -67,15 +88,24 @@ function App() {
         </header>
 
         <nav className="screen-nav">
-          {(["scan", "config", "installing", "telemetry"] as Screen[]).map((s) => (
-            <button
-              key={s}
-              className={s === screen ? "screen-nav-active" : ""}
-              onClick={() => setScreen(s)}
-            >
-              {s}
-            </button>
-          ))}
+          {(["scan", "config", "installing", "telemetry"] as Screen[]).map((s) => {
+            const reachable = isScreenReachable(s);
+            return (
+              <button
+                key={s}
+                className={[
+                  s === screen ? "screen-nav-active" : "",
+                  reachable ? "" : "screen-nav-disabled",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                disabled={!reachable}
+                onClick={() => reachable && setScreen(s)}
+              >
+                {s}
+              </button>
+            );
+          })}
         </nav>
 
         {screen === "scan" && <ScanTable onSelect={handleSelect} />}

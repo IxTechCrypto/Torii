@@ -69,9 +69,8 @@ pub async fn install(app: tauri::AppHandle, config: InstallConfig) -> Result<i32
         .arg("--host")
         .arg(&config.host)
         .arg("--user")
-        .arg(config.user.as_deref().unwrap_or("miner"))
-        .arg("--password")
-        .arg(config.password.as_deref().unwrap_or("miner"));
+        .arg(config.user.as_deref().unwrap_or("miner"));
+    cmd.env("PASSWORD", config.password.as_deref().unwrap_or("miner"));
 
     if let Some(rootfs) = &config.rootfs {
         cmd.arg("--rootfs").arg(rootfs);
@@ -101,16 +100,37 @@ pub async fn install(app: tauri::AppHandle, config: InstallConfig) -> Result<i32
     });
 
     let stdout = child.stdout.take().ok_or("failed to capture stdout")?;
+    let mut read_err: Option<String> = None;
     for line in BufReader::new(stdout).lines() {
-        let line = line.map_err(|e| format!("error reading install output: {e}"))?;
-        let _ = app.emit("install://log", line);
+        match line {
+            Ok(line) => {
+                let _ = app.emit("install://log", line);
+            }
+            Err(e) => {
+                read_err = Some(format!("error reading install output: {e}"));
+                break;
+            }
+        }
     }
+
+    // On a read error the script may still be running; make sure it doesn't
+    // outlive this function as an orphaned, unmonitored flash of real hardware.
+    if read_err.is_some() {
+        let _ = child.kill();
+    }
+    let wait_result = child
+        .wait()
+        .map_err(|e| format!("failed to wait on install script: {e}"));
     let _ = stderr_thread.join();
 
-    let status = child
-        .wait()
-        .map_err(|e| format!("failed to wait on install script: {e}"))?;
-    let exit_code = status.code().unwrap_or(-1);
+    // Always give the frontend a terminal event, no matter which path below
+    // returns, so InstallLog.tsx never waits forever on install://done.
+    let exit_code = wait_result.as_ref().map(|s| s.code().unwrap_or(-1)).unwrap_or(-1);
     let _ = app.emit("install://done", exit_code);
+
+    if let Some(e) = read_err {
+        return Err(e);
+    }
+    wait_result?;
     Ok(exit_code)
 }

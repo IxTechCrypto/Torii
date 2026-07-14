@@ -11,6 +11,7 @@ export default function InstallLog({ config, onDone }: Props) {
   const [lines, setLines] = useState<string[]>([]);
   const [exitCode, setExitCode] = useState<number | null>(null);
   const preRef = useRef<HTMLPreElement>(null);
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -20,13 +21,24 @@ export default function InstallLog({ config, onDone }: Props) {
       const logUn = await onInstallLog((line) => {
         setLines((prev) => [...prev, line]);
       });
+      if (cancelled) {
+        logUn();
+        return;
+      }
+      unlisten.push(logUn);
+
       const doneUn = await onInstallDone((code) => {
         setExitCode(code);
         onDone(code);
       });
-      unlisten.push(logUn, doneUn);
+      if (cancelled) {
+        doneUn();
+        return;
+      }
+      unlisten.push(doneUn);
 
-      if (cancelled) return;
+      if (hasStartedRef.current) return;
+      hasStartedRef.current = true;
       try {
         await install(config);
       } catch (e) {
