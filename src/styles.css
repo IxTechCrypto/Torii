@@ -53,6 +53,12 @@
 }
 
 html,
+body,
+#root {
+  height: 100%;
+}
+
+html,
 body {
   margin: 0;
   min-height: 100vh;
@@ -73,6 +79,12 @@ body {
   margin: 0 auto;
   padding: 2rem 1.5rem;
   max-width: 960px;
+  /* Fill the viewport height so the HUD frame stretches to the full window
+     instead of only hugging its content — that keeps the bottom border the
+     same distance from the window edge as the top and sides on resize. */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* --- HUD frame: the sci-fi console border wrapping the whole app ---
@@ -96,6 +108,9 @@ body {
 
 .hud-frame-wrap {
   position: relative;
+  /* Grow to fill the flex container's height and let the frame stretch. */
+  flex: 1;
+  display: flex;
   filter: drop-shadow(0 0 10px rgba(0, 255, 242, 0.3)) drop-shadow(0 0 28px rgba(0, 255, 242, 0.12));
   /* The bottom-right notch (for the tick-row decoration) used to be a plain
      right-angle step while the other three corners are 18px diagonal
@@ -130,6 +145,8 @@ body {
 
 .hud-frame {
   position: relative;
+  /* Fill the wrap's width and stretch to its full height. */
+  flex: 1;
   background: #060d10;
   padding: 2rem 2.5rem 2.75rem 2rem;
   clip-path: var(--hud-shape);
