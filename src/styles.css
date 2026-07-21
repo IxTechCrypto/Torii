@@ -33,6 +33,14 @@
     0 calc(100% - var(--chamfer-lg)),
     0 var(--chamfer-lg)
   );
+  /* Single bottom-right chamfer, no cuts on the other three corners. */
+  --shape-corner: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--chamfer-lg)),
+    calc(100% - var(--chamfer-lg)) 100%,
+    0 100%
+  );
 
   font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", ui-monospace, "Consolas", monospace;
   color: var(--text);
@@ -89,13 +97,24 @@ body {
 .hud-frame-wrap {
   position: relative;
   filter: drop-shadow(0 0 10px rgba(0, 255, 242, 0.3)) drop-shadow(0 0 28px rgba(0, 255, 242, 0.12));
+  /* The bottom-right notch (for the tick-row decoration) used to be a plain
+     right-angle step while the other three corners are 18px diagonal
+     chamfers. Beveling just its two outward corners still left a square
+     inner corner between them — bevel that one too so there's no 90° turn
+     left anywhere. With this notch's height (36px) being exactly 2x the
+     18px chamfer, the inner corner's own bevel lines up exactly with the
+     two outer bevels into one continuous diagonal (the notch's short
+     vertical edge collapses to zero length) — if either of those numbers
+     ever changes independently, re-derive this instead of assuming it
+     still lines up. */
   --hud-shape: polygon(
     18px 0,
     calc(100% - 18px) 0,
     100% 18px,
-    100% calc(100% - 36px),
-    calc(100% - 96px) calc(100% - 36px),
-    calc(100% - 96px) 100%,
+    100% calc(100% - 36px - 18px),
+    calc(100% - 18px) calc(100% - 36px),
+    calc(100% - 78px) calc(100% - 36px),
+    calc(100% - 114px) 100%,
     18px 100%,
     0 calc(100% - 18px),
     0 18px
@@ -195,6 +214,7 @@ button,
 input,
 select {
   clip-path: var(--shape-sm);
+  border: none;
 }
 
 /* --- form controls --- */
@@ -289,7 +309,7 @@ input:focus {
 .scan-table-ring {
   position: absolute;
   inset: -1px;
-  clip-path: var(--shape-lg);
+  clip-path: var(--shape-corner);
   background: var(--border);
 }
 
@@ -298,7 +318,7 @@ input:focus {
   width: 100%;
   border-collapse: collapse;
   background: var(--bg-panel);
-  clip-path: var(--shape-lg);
+  clip-path: var(--shape-corner);
 }
 
 .scan-table th,
@@ -398,6 +418,9 @@ input:focus {
 .confirm-modal-overlay {
   position: fixed;
   inset: 0;
+  /* Pad the viewport so the modal never butts against (or spills past) the
+     window edges at any window size. */
+  padding: 1.5rem;
   background: rgba(3, 3, 8, 0.75);
   backdrop-filter: blur(3px);
   display: flex;
@@ -410,6 +433,11 @@ input:focus {
   position: relative;
   max-width: 600px;
   width: 90%;
+  /* Cap to the available viewport (minus the overlay padding above) and let
+     the modal below it flex within — otherwise a long console dump grows the
+     modal past the window and pushes the action buttons off-screen. */
+  max-height: calc(100vh - 3rem);
+  display: flex;
   filter: drop-shadow(0 0 16px rgba(255, 32, 80, 0.4)) drop-shadow(0 0 40px rgba(255, 32, 80, 0.18));
 }
 
@@ -422,6 +450,10 @@ input:focus {
 
 .confirm-modal {
   position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-panel);
   padding: 1.5rem 1.75rem;
   clip-path: var(--shape-lg);
@@ -434,7 +466,11 @@ input:focus {
 }
 
 .confirm-modal-preview {
-  max-height: 300px;
+  /* Flex child of the column: take the leftover height and scroll inside,
+     so title/warning/actions stay pinned and visible. min-height:0 lets it
+     shrink below its content so the scrollbar actually engages. */
+  flex: 1 1 auto;
+  min-height: 3rem;
   overflow: auto;
   background: #020204;
   border: 1px solid var(--border);
@@ -449,6 +485,7 @@ input:focus {
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 1rem;
+  flex-shrink: 0;
 }
 
 .confirm-modal-danger {

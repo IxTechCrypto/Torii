@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ScanTable from "./components/ScanTable";
 import ConfigForm from "./components/ConfigForm";
 import ConfirmModal from "./components/ConfirmModal";
 import InstallLog from "./components/InstallLog";
 import TelemetryView from "./components/TelemetryView";
-import { preview } from "./api";
-import type { HostRecord, InstallConfig } from "./types";
+import BitaxeUsbTable from "./components/BitaxeUsbTable";
+import BitaxeFlashLog from "./components/BitaxeFlashLog";
+import { peekUsbSerial, preview } from "./api";
+import { formatUsbDeviceSummary, type HostRecord, type InstallConfig, type UsbDeviceRecord } from "./types";
 import "./styles.css";
 
-type Screen = "scan" | "config" | "installing" | "telemetry";
+type Screen = "scan" | "config" | "installing" | "telemetry" | "usb" | "flash";
 
 function App() {
   const [screen, setScreen] = useState<Screen>("scan");
@@ -18,6 +20,39 @@ function App() {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [installConfig, setInstallConfig] = useState<InstallConfig | null>(null);
   const [installExitCode, setInstallExitCode] = useState<number | null>(null);
+  const [telemetryIp, setTelemetryIp] = useState<string | null>(null);
+  const [usbConfirmPending, setUsbConfirmPending] = useState<UsbDeviceRecord | null>(null);
+  const [usbPeekText, setUsbPeekText] = useState<string | null>(null);
+  const [usbPeekLoading, setUsbPeekLoading] = useState(false);
+  const [usbFlashPort, setUsbFlashPort] = useState<string | null>(null);
+  const [usbFlashExitCode, setUsbFlashExitCode] = useState<number | null>(null);
+
+  // Whenever a candidate device is up for confirmation, listen on its port
+  // for a few seconds and capture whatever the firmware already running on
+  // it is logging — much stronger identity evidence than the VID/PID match
+  // alone, since it's real content from the chip, not just a USB descriptor.
+  useEffect(() => {
+    if (!usbConfirmPending) {
+      setUsbPeekText(null);
+      return;
+    }
+    let cancelled = false;
+    setUsbPeekLoading(true);
+    setUsbPeekText(null);
+    peekUsbSerial(usbConfirmPending.port)
+      .then((text) => {
+        if (!cancelled) setUsbPeekText(text);
+      })
+      .catch((e) => {
+        if (!cancelled) setUsbPeekText(`(couldn't read console: ${String(e)})`);
+      })
+      .finally(() => {
+        if (!cancelled) setUsbPeekLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [usbConfirmPending]);
 
   function handleSelect(record: HostRecord, scanFile: string) {
     setSelected({ record, scanFile });
@@ -49,7 +84,31 @@ function App() {
 
   function handleInstallDone(exitCode: number) {
     setInstallExitCode(exitCode);
+    if (exitCode === 0 && selected) {
+      setTelemetryIp(selected.record.host);
+      setScreen("telemetry");
+    }
+  }
+
+  function handleUsbSelect(record: UsbDeviceRecord) {
+    setUsbConfirmPending(record);
+  }
+
+  function handleUsbConfirm() {
+    if (!usbConfirmPending) return;
+    setUsbFlashPort(usbConfirmPending.port);
+    setUsbFlashExitCode(null);
+    setUsbConfirmPending(null);
+    setScreen("flash");
+  }
+
+  function handleUsbFlashDone(exitCode: number) {
+    setUsbFlashExitCode(exitCode);
     if (exitCode === 0) {
+      // mujina-minerd is already running on this host and picks up the
+      // freshly-flashed Bitaxe on its own USB scan — poll it locally to
+      // confirm rather than sending the user off to check some other way.
+      setTelemetryIp("127.0.0.1");
       setScreen("telemetry");
     }
   }
@@ -66,7 +125,14 @@ function App() {
         // been flashed.
         return installConfig !== null && installExitCode !== 0;
       case "telemetry":
-        return installExitCode === 0;
+        return telemetryIp !== null;
+      case "usb":
+        return true;
+      case "flash":
+        // Same re-entry guard as "installing": once a flash has succeeded,
+        // re-entering would remount BitaxeFlashLog and re-run espflash
+        // against a board that's already been flashed.
+        return usbFlashPort !== null && usbFlashExitCode !== 0;
     }
   }
 
@@ -88,7 +154,7 @@ function App() {
         </header>
 
         <nav className="screen-nav">
-          {(["scan", "config", "installing", "telemetry"] as Screen[]).map((s) => {
+          {(["scan", "config", "installing", "telemetry", "usb", "flash"] as Screen[]).map((s) => {
             const reachable = isScreenReachable(s);
             return (
               <button
@@ -140,10 +206,37 @@ function App() {
           ))}
 
         {screen === "telemetry" &&
-          (selected ? (
-            <TelemetryView ip={selected.record.host} />
+          (telemetryIp ? <TelemetryView ip={telemetryIp} /> : <p>No host selected.</p>)}
+
+        {screen === "usb" && (
+          <>
+            <BitaxeUsbTable onSelect={handleUsbSelect} />
+            {usbConfirmPending && (
+              <ConfirmModal
+                title="Confirm bitaxe-raw flash"
+                warning="This writes new firmware onto the ESP32-S3 over USB."
+                actionLabel="Flash bitaxe-raw — this is destructive"
+                previewText={
+                  formatUsbDeviceSummary(usbConfirmPending) +
+                  "\n\n--- console output (read-only, 3s) ---\n" +
+                  (usbPeekLoading
+                    ? "listening..."
+                    : usbPeekText
+                      ? usbPeekText
+                      : "(nothing captured — the firmware may just be quiet right now; this doesn't rule the device out)")
+                }
+                onConfirm={handleUsbConfirm}
+                onCancel={() => setUsbConfirmPending(null)}
+              />
+            )}
+          </>
+        )}
+
+        {screen === "flash" &&
+          (usbFlashPort ? (
+            <BitaxeFlashLog port={usbFlashPort} onDone={handleUsbFlashDone} />
           ) : (
-            <p>No host selected.</p>
+            <p>No USB flash in progress.</p>
           ))}
         </div>
       </div>

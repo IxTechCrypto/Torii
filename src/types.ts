@@ -59,3 +59,43 @@ export const INSTALLABLE_FIRMWARE: Firmware = "stock-bitmain";
 export function isInstallable(r: HostRecord): boolean {
   return r.firmware === INSTALLABLE_FIRMWARE;
 }
+
+// Mirrors commands::usb::BitaxeUsbStatus (`#[serde(rename_all = "kebab-case")]`).
+export type BitaxeUsbStatus = "raw-installed" | "flash-candidate";
+
+export interface UsbDeviceRecord {
+  port: string;
+  vid: number;
+  pid: number;
+  manufacturer: string | null;
+  product: string | null;
+  serial_number: string | null;
+  status: BitaxeUsbStatus;
+}
+
+// "flash-candidate" devices match the ESP32-S3's generic default USB
+// identity (VID 0x303A/PID 0x1001), not something unique to a Bitaxe, so
+// this is never a positive identification — just eligibility to attempt a
+// flash. The frontend must get explicit user confirmation either way.
+export function isFlashCandidate(d: UsbDeviceRecord): boolean {
+  return d.status === "flash-candidate";
+}
+
+function hex4(n: number): string {
+  return n.toString(16).padStart(4, "0").toUpperCase();
+}
+
+export function formatUsbDeviceSummary(d: UsbDeviceRecord): string {
+  return [
+    `Port: ${d.port}`,
+    `VID:PID: ${hex4(d.vid)}:${hex4(d.pid)}`,
+    `Manufacturer: ${d.manufacturer ?? "—"}`,
+    `Product: ${d.product ?? "—"}`,
+    `Serial: ${d.serial_number ?? "—"}`,
+    "",
+    "This VID/PID is the ESP32-S3's generic default identity, not unique to",
+    "Bitaxe boards — any other unflashed ESP32-S3 device would match it too.",
+    "Confirm this is actually your Bitaxe (e.g. unplug it and check this",
+    "entry disappears) before flashing.",
+  ].join("\n");
+}

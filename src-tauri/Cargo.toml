@@ -23,4 +23,9 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 reqwest = { version = "0.12", features = ["json"] }
+serialport = "4"
+# nusb's Windows backend offloads blocking USB syscalls to the async
+# runtime, so it needs the `tokio` feature to be awaited (see
+# mujina-miner's Cargo.toml, which hit the same panic on Windows first).
+nusb = { version = "0.2", features = ["tokio"] }
 
