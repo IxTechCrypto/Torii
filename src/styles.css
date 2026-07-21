@@ -482,6 +482,25 @@ input:focus {
   margin-top: 0;
 }
 
+.confirm-modal-notice {
+  margin: 0 0 0.85rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  clip-path: var(--shape-sm);
+}
+
+.confirm-modal-notice-danger {
+  background: rgba(255, 32, 80, 0.14);
+  color: var(--danger);
+  text-shadow: 0 0 6px rgba(255, 32, 80, 0.5);
+}
+
+.confirm-modal-notice-info {
+  background: rgba(0, 255, 242, 0.1);
+  color: var(--cyan);
+}
+
 .confirm-modal-preview {
   /* Flex child of the column: take the leftover height and scroll inside,
      so title/warning/actions stay pinned and visible. min-height:0 lets it

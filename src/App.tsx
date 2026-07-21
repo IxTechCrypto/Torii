@@ -7,6 +7,7 @@ import TelemetryView from "./components/TelemetryView";
 import BitaxeUsbTable from "./components/BitaxeUsbTable";
 import BitaxeFlashLog from "./components/BitaxeFlashLog";
 import { peekUsbSerial, preview } from "./api";
+import { detectAsic } from "./asic";
 import { formatUsbDeviceSummary, type HostRecord, type InstallConfig, type UsbDeviceRecord } from "./types";
 import "./styles.css";
 
@@ -136,6 +137,22 @@ function App() {
     }
   }
 
+  // Identify the ASIC from the console peek (only once the peek has finished —
+  // mid-peek we don't yet know). A positively-detected unsupported chip blocks
+  // the flash; a null result (quiet/empty peek) is "unknown" and never blocks.
+  const usbAsic = usbPeekLoading ? null : detectAsic(usbPeekText);
+  const usbUnsupported = usbAsic !== null && !usbAsic.supported;
+  const usbNotice = usbPeekLoading
+    ? { level: "info" as const, text: "Identifying ASIC from the board's console…" }
+    : usbUnsupported
+      ? {
+          level: "danger" as const,
+          text: `Detected ${usbAsic!.chip} (${usbAsic!.model}) — not supported. mujina currently drives only the Bitaxe Gamma (BM1370). Flashing would overwrite AxeOS and the board still wouldn't mine, so it's blocked.`,
+        }
+      : usbAsic?.supported
+        ? { level: "info" as const, text: `Detected ${usbAsic.chip} (${usbAsic.model}) — supported.` }
+        : null;
+
   return (
     <main className="container">
       <div className="hud-frame-wrap">
@@ -216,6 +233,8 @@ function App() {
                 title="Confirm bitaxe-raw flash"
                 warning="This writes new firmware onto the ESP32-S3 over USB."
                 actionLabel="Flash bitaxe-raw — this is destructive"
+                confirmDisabled={usbPeekLoading || usbUnsupported}
+                notice={usbNotice}
                 previewText={
                   formatUsbDeviceSummary(usbConfirmPending) +
                   "\n\n--- console output (read-only, 3s) ---\n" +
