@@ -9,7 +9,7 @@ use std::process::Command;
 
 use tauri::Manager;
 
-use crate::external::SCAN_BIN;
+use crate::external::resolve_scan_bin;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct ApiRaw {
@@ -52,9 +52,10 @@ pub async fn scan(
     cidr: Option<String>,
     timeout_ms: Option<u64>,
 ) -> Result<ScanResult, String> {
-    if !std::path::Path::new(SCAN_BIN).exists() {
+    let scan_bin = resolve_scan_bin()?;
+    if !std::path::Path::new(&scan_bin).exists() {
         return Err(format!(
-            "mujina-scan.exe not found at {SCAN_BIN}; run cargo build --release in the mujina workspace"
+            "mujina-scan.exe not found at {scan_bin}; run cargo build --release in the mujina workspace"
         ));
     }
 
@@ -67,13 +68,9 @@ pub async fn scan(
     let scan_file = cache_dir.join("last-scan.json");
     let scan_file_str = scan_file.to_string_lossy().to_string();
 
-    // A /24 sweep under system load (Vite/cargo running alongside it) can
-    // push a slow-to-respond host past a tight timeout; 800ms occasionally
-    // dropped a real device. 1500ms costs at most ~0.7s more wall-clock on
-    // a full sweep and gives real hardware more margin.
     let timeout_ms = timeout_ms.unwrap_or(1500);
 
-    let mut cmd = Command::new(SCAN_BIN);
+    let mut cmd = Command::new(&scan_bin);
     match cidr {
         // A bare IP (no "/") isn't a valid --cidr argument to mujina-scan,
         // which requires CIDR notation — route it through --host instead so

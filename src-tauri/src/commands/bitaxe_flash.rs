@@ -10,7 +10,7 @@ use std::process::{Command, Stdio};
 use tauri::Emitter;
 
 use crate::commands::usb::{enumerate, BitaxeUsbStatus};
-use crate::external::{resolve_espflash, BITAXE_RAW_FIRMWARE_ELF};
+use crate::external::{resolve_bitaxe_raw_elf, resolve_espflash};
 
 #[tauri::command]
 pub async fn flash_bitaxe_raw(app: tauri::AppHandle, port: String) -> Result<i32, String> {
@@ -28,9 +28,10 @@ pub async fn flash_bitaxe_raw(app: tauri::AppHandle, port: String) -> Result<i32
         ));
     }
 
-    if !std::path::Path::new(BITAXE_RAW_FIRMWARE_ELF).exists() {
+    let firmware_elf = resolve_bitaxe_raw_elf()?;
+    if !std::path::Path::new(&firmware_elf).exists() {
         return Err(format!(
-            "bitaxe-raw firmware not found at {BITAXE_RAW_FIRMWARE_ELF}; run `cargo build --release` in the bitaxe-raw workspace"
+            "bitaxe-raw firmware not found at {firmware_elf}; run `cargo build --release` in the bitaxe-raw workspace"
         ));
     }
 
@@ -42,17 +43,11 @@ pub async fn flash_bitaxe_raw(app: tauri::AppHandle, port: String) -> Result<i32
         .arg("--chip")
         .arg("esp32s3")
         .arg("--non-interactive")
-        // Stock Bitaxe firmware talks over the ESP32-S3's native
-        // USB-Serial-JTAG peripheral (that's what the VID_303A/PID_1001
-        // "USB JTAG/serial debug unit" identity is), not a UART bridge chip
-        // with DTR/RTS-wired auto-reset. `default-reset` assumes the latter
-        // and won't reliably drop the chip into the ROM bootloader here;
-        // `usb-reset` is espflash's dedicated sequence for this peripheral.
         .arg("--before")
         .arg("usb-reset")
         .arg("--after")
         .arg("hard-reset")
-        .arg(BITAXE_RAW_FIRMWARE_ELF);
+        .arg(&firmware_elf);
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
 
     let mut child = cmd

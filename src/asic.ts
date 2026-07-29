@@ -19,13 +19,14 @@ export interface AsicIdentity {
   supported: boolean; // true only for the ASIC mujina can drive today
 }
 
-// The one ASIC mujina-minerd supports today. Keep in sync with
-// mujina-miner/src/board/bitaxe.rs (which hardcodes the Bitaxe Gamma /
-// BM1370). When mujina gains support for more boards, widen this.
+// mujina-minerd ONLY supports BM1370 chips (Bitaxe Gamma & NerdQAxe++).
+// There is no plan to support Ultra (BM1366), Supra (BM1368), or Max (BM1397).
+// When detected, those models are recognized but flagged as supported = false
+// to block flashing and prevent overwriting AxeOS.
 const SUPPORTED_CHIPS: ReadonlySet<string> = new Set(["BM1370"]);
 
 const KNOWN_MODELS: Record<string, string> = {
-  BM1370: "Bitaxe Gamma",
+  BM1370: "Bitaxe Gamma / NerdQAxe++",
   BM1368: "Bitaxe Supra",
   BM1366: "Bitaxe Ultra",
   BM1397: "Bitaxe Max",

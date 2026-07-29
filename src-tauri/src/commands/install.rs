@@ -8,13 +8,14 @@ use std::process::{Command, Stdio};
 
 use tauri::Emitter;
 
-use crate::external::{resolve_bash, INSTALL_SCRIPT};
+use crate::external::{resolve_bash, resolve_install_script};
 
 #[tauri::command]
 pub async fn preview(scan_file: String, host: String) -> Result<String, String> {
     let bash = resolve_bash()?;
+    let install_script = resolve_install_script()?;
     let output = Command::new(&bash)
-        .arg(INSTALL_SCRIPT)
+        .arg(&install_script)
         .arg("--from-scan")
         .arg(&scan_file)
         .arg("--host")
@@ -62,8 +63,9 @@ pub async fn install(app: tauri::AppHandle, config: InstallConfig) -> Result<i32
     }
 
     let bash = resolve_bash()?;
+    let install_script = resolve_install_script()?;
     let mut cmd = Command::new(&bash);
-    cmd.arg(INSTALL_SCRIPT)
+    cmd.arg(&install_script)
         .arg("--from-scan")
         .arg(&config.scan_file)
         .arg("--host")

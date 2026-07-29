@@ -1,5 +1,9 @@
 # Torii
 
+> [!CAUTION]
+> **PROTOTYPE SOFTWARE — USE AT YOUR OWN RISK**  
+> Torii is an experimental developer prototype for hardware provisioning and firmware flashing. Flashing firmware over network/USB carries inherent risks, including device unreachability ("bricking") or hardware damage if interrupted or misconfigured. Ensure you have physical access, serial UART recovery tools, or stock USB burn tools available before attempting to flash real hardware.
+
 ![Torii — the gateway to Mujina](docs/torii-mujina-gateway.jpg)
 
 **Torii is the gateway to Mujina.** A *torii*

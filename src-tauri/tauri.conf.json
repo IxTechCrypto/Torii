@@ -12,9 +12,9 @@
   "app": {
     "windows": [
       {
-        "title": "torii",
-        "width": 800,
-        "height": 600
+        "title": "Torii — Mujina Provisioner",
+        "width": 960,
+        "height": 720
       }
     ],
     "security": {
