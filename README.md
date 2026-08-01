@@ -18,22 +18,22 @@ miners, and it provisions the ones it can safely convert.
 
 ## What it does
 
-Torii is a single guided path from "bare miner on the network" to "mining under
-Mujina," with a hard safety stop before anything destructive happens:
+Torii is a single guided wizard path from "unprovisioned hardware" to "mining under Mujina," featuring two main workflows:
 
-1. **Scan** — sweeps the LAN (via `mujina-scan`) and lists every host it finds.
-   Only devices running stock Bitmain firmware are selectable; anything else is
-   greyed out, because those are the only ones Mujina can flash.
-2. **Configure** — set the pool URL, worker name, user, and password for the
-   node you're about to bring up.
-3. **Confirm** — before a single byte is written to the device, Torii shows you
-   the installer's real `--print-plan` output in a destructive-action modal. You
-   read exactly what will happen, then you decide.
-4. **Install** — streams the flash/install output live, stdout and stderr both,
-   so you watch the conversion happen in real time instead of staring at a
-   frozen spinner.
-5. **Telemetry** — once the node comes up, Torii polls it every few seconds and
-   shows hashrate, temps, fan, power, and pool status.
+### A. LAN Network Install (Antminer Hardware)
+1. **Discovery** — Sweeps the local network (via `mujina-scan`). Only devices running stock Bitmain firmware are selectable.
+2. **Configuration** — Set pool configurations and SSH authentication credentials.
+3. **Plan Review** — Preview the dry-run plan (`install_mujina_aml.sh --print-plan`) inline before executing.
+4. **Deploy** — Stream the SSH-based install log live (stdout & stderr) to monitor rootfs writing.
+5. **Telemetry** — Once Mujina starts, poll hashrate, temperatures, and fan speeds in a real-time monitor.
+
+### B. USB Firmware Flash (Bitaxe & NerdQAxe++ Hardware)
+1. **Discovery** — Scans USB serial ports for ESP32-S3 chips. Unflashed devices (VID `0x303a`/PID `0x1001`) are classified as flash candidates. Already-flashed boards show as `raw-installed` (VID `0xc0de`/PID `0xcafe`).
+2. **ASIC & Model Review** — Peeks at the board's console logs over UART for 3 seconds. It auto-detects the ASIC model:
+   - **Supported**: Bitaxe Gamma / NerdQAxe++ (BM1370 ASIC).
+   - **Safety-Blocked**: Bitaxe Ultra (BM1366 ASIC) or unrecognized boards are blocked from flashing in the UI to prevent overwriting AxeOS/ESP-Miner for an unsupported hardware target.
+3. **Deploy** — Spawns `espflash` over USB with the native JTAG `--before usb-reset` configuration, streaming flash percentages live.
+4. **Telemetry** — Automatically configures telemetry monitoring to point to the local host (`127.0.0.1:7785`), where the resident `mujina-minerd` auto-detects and drives the newly flashed board.
 
 ## How it works with Mujina
 

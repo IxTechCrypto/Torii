@@ -11,8 +11,8 @@
   --text: #d8e6f2;
   --text-dim: #7c8aa0;
   --border: #1f3a44;
-  --chamfer-sm: 8px;
-  --chamfer-lg: 16px;
+  --chamfer-sm: 4px;
+  --chamfer-lg: 8px;
   --shape-sm: polygon(
     var(--chamfer-sm) 0,
     calc(100% - var(--chamfer-sm)) 0,
@@ -122,17 +122,18 @@ body {
      vertical edge collapses to zero length) — if either of those numbers
      ever changes independently, re-derive this instead of assuming it
      still lines up. */
+  /* Scaled HUD shape: 10px outer chamfers, 20px notch height. */
   --hud-shape: polygon(
-    18px 0,
-    calc(100% - 18px) 0,
-    100% 18px,
-    100% calc(100% - 36px - 18px),
-    calc(100% - 18px) calc(100% - 36px),
-    calc(100% - 78px) calc(100% - 36px),
-    calc(100% - 114px) 100%,
-    18px 100%,
-    0 calc(100% - 18px),
-    0 18px
+    10px 0,
+    calc(100% - 10px) 0,
+    100% 10px,
+    100% calc(100% - 20px - 10px),
+    calc(100% - 10px) calc(100% - 20px),
+    calc(100% - 60px) calc(100% - 20px),
+    calc(100% - 80px) 100%,
+    10px 100%,
+    0 calc(100% - 10px),
+    0 10px
   );
 }
 
@@ -169,15 +170,15 @@ body {
 .hud-tick-row {
   position: absolute;
   right: 14px;
-  bottom: 9px;
+  bottom: 4px;
   display: flex;
-  gap: 4px;
+  gap: 3px;
   pointer-events: none;
 }
 
 .hud-tick-row span {
-  width: 8px;
-  height: 12px;
+  width: 4px;
+  height: 8px;
   background: var(--cyan);
   opacity: 0.85;
 }
@@ -296,6 +297,127 @@ input:focus {
 .screen-nav-active:hover {
   background: var(--cyan);
   filter: drop-shadow(0 0 8px rgba(0, 255, 242, 0.6));
+}
+
+/* --- wizard stepper --- */
+
+.wizard-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-panel);
+  clip-path: var(--shape-sm);
+  border: 1px solid var(--border);
+}
+
+.wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  transition: all 150ms ease-out;
+  cursor: default;
+}
+
+.wizard-step-active {
+  color: var(--cyan);
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(0, 255, 242, 0.5);
+}
+
+.wizard-step-completed {
+  color: var(--text);
+  cursor: pointer;
+}
+
+.wizard-step-completed:hover {
+  color: var(--cyan);
+}
+
+.wizard-step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--text-dim);
+  font-size: 0.65rem;
+}
+
+.wizard-step-active .wizard-step-number {
+  border-color: var(--cyan);
+  background: rgba(0, 255, 242, 0.15);
+  box-shadow: 0 0 6px rgba(0, 255, 242, 0.4);
+}
+
+.wizard-step-completed .wizard-step-number {
+  border-color: var(--text);
+  background: rgba(216, 230, 242, 0.1);
+}
+
+.wizard-step-divider {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  margin: 0 1rem;
+}
+
+.wizard-step-divider-active {
+  background: var(--cyan-dim);
+}
+
+/* --- discovery panel layout --- */
+
+.discovery-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.discovery-toggle-group {
+  display: flex;
+  background: var(--bg-panel);
+  padding: 3px;
+  clip-path: var(--shape-sm);
+  align-self: flex-start;
+  border: 1px solid var(--border);
+}
+
+.discovery-toggle-btn {
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  clip-path: var(--shape-sm);
+  padding: 0.45rem 1.25rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: all 120ms ease-out;
+}
+
+.discovery-toggle-btn:hover:not(:disabled) {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  filter: none;
+}
+
+.discovery-toggle-btn-active {
+  background: var(--cyan);
+  color: #04141a;
+}
+
+.discovery-toggle-btn-active:hover:not(:disabled) {
+  background: var(--cyan);
+  color: #04141a;
+  filter: drop-shadow(0 0 6px rgba(0, 255, 242, 0.5));
 }
 
 /* --- scan controls --- */

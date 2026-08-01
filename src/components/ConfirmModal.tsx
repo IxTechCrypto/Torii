@@ -11,6 +11,8 @@ interface Props {
   // Optional banner shown above the preview — used to surface ASIC-support
   // status. `danger` for a blocking problem, `info` for neutral status.
   notice?: { level: "danger" | "info"; text: string } | null;
+  // Render inline as a card instead of fixed screen-blocking overlay
+  isInline?: boolean;
 }
 
 export default function ConfirmModal({
@@ -22,35 +24,44 @@ export default function ConfirmModal({
   actionLabel = "Flash NAND — this is destructive",
   confirmDisabled = false,
   notice = null,
+  isInline = false,
 }: Props) {
-  return (
-    <div className="confirm-modal-overlay">
-      <div className="confirm-modal-wrap">
-        <div className="confirm-modal-ring" aria-hidden="true" />
-        <div className="confirm-modal">
-          <h2 className="confirm-modal-title">{title}</h2>
-          <p>{warning}</p>
-          {notice && (
-            <p className={`confirm-modal-notice confirm-modal-notice-${notice.level}`}>
-              {notice.text}
-            </p>
-          )}
-          <pre className="confirm-modal-preview">{previewText}</pre>
-          <div className="confirm-modal-actions">
-            <button type="button" onClick={onCancel}>
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="confirm-modal-danger"
-              onClick={onConfirm}
-              disabled={confirmDisabled}
-            >
-              {actionLabel}
-            </button>
-          </div>
+  const content = (
+    <div className="confirm-modal-wrap" style={isInline ? { width: "100%", maxWidth: "100%", maxHeight: "none" } : undefined}>
+      <div className="confirm-modal-ring" aria-hidden="true" />
+      <div className="confirm-modal">
+        <h2 className="confirm-modal-title">{title}</h2>
+        <p>{warning}</p>
+        {notice && (
+          <p className={`confirm-modal-notice confirm-modal-notice-${notice.level}`}>
+            {notice.text}
+          </p>
+        )}
+        <pre className="confirm-modal-preview" style={isInline ? { maxHeight: "300px" } : undefined}>{previewText}</pre>
+        <div className="confirm-modal-actions">
+          <button type="button" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="confirm-modal-danger"
+            onClick={onConfirm}
+            disabled={confirmDisabled}
+          >
+            {actionLabel}
+          </button>
         </div>
       </div>
+    </div>
+  );
+
+  if (isInline) {
+    return content;
+  }
+
+  return (
+    <div className="confirm-modal-overlay">
+      {content}
     </div>
   );
 }

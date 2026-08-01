@@ -11,22 +11,21 @@ import { detectAsic } from "./asic";
 import { formatUsbDeviceSummary, type HostRecord, type InstallConfig, type UsbDeviceRecord } from "./types";
 import "./styles.css";
 
-type Screen = "scan" | "config" | "installing" | "telemetry" | "usb" | "flash";
+type Screen = "discovery" | "config" | "usb-confirm" | "deploying" | "telemetry";
 
 function App() {
-  const [screen, setScreen] = useState<Screen>("scan");
+  const [screen, setScreen] = useState<Screen>("discovery");
+  const [discoveryMode, setDiscoveryMode] = useState<"lan" | "usb">("lan");
   const [selected, setSelected] = useState<{ record: HostRecord; scanFile: string } | null>(null);
   const [pendingConfig, setPendingConfig] = useState<InstallConfig | null>(null);
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [installConfig, setInstallConfig] = useState<InstallConfig | null>(null);
-  const [installExitCode, setInstallExitCode] = useState<number | null>(null);
   const [telemetryIp, setTelemetryIp] = useState<string | null>(null);
   const [usbConfirmPending, setUsbConfirmPending] = useState<UsbDeviceRecord | null>(null);
   const [usbPeekText, setUsbPeekText] = useState<string | null>(null);
   const [usbPeekLoading, setUsbPeekLoading] = useState(false);
   const [usbFlashPort, setUsbFlashPort] = useState<string | null>(null);
-  const [usbFlashExitCode, setUsbFlashExitCode] = useState<number | null>(null);
 
   // Whenever a candidate device is up for confirmation, listen on its port
   // for a few seconds and capture whatever the firmware already running on
@@ -73,9 +72,8 @@ function App() {
 
   function handleConfirm() {
     setInstallConfig(pendingConfig);
-    setInstallExitCode(null);
     setPreviewText(null);
-    setScreen("installing");
+    setScreen("deploying");
   }
 
   function handleCancelPreview() {
@@ -84,7 +82,6 @@ function App() {
   }
 
   function handleInstallDone(exitCode: number) {
-    setInstallExitCode(exitCode);
     if (exitCode === 0 && selected) {
       setTelemetryIp(selected.record.host);
       setScreen("telemetry");
@@ -93,18 +90,16 @@ function App() {
 
   function handleUsbSelect(record: UsbDeviceRecord) {
     setUsbConfirmPending(record);
+    setScreen("usb-confirm");
   }
 
   function handleUsbConfirm() {
     if (!usbConfirmPending) return;
     setUsbFlashPort(usbConfirmPending.port);
-    setUsbFlashExitCode(null);
-    setUsbConfirmPending(null);
-    setScreen("flash");
+    setScreen("deploying");
   }
 
   function handleUsbFlashDone(exitCode: number) {
-    setUsbFlashExitCode(exitCode);
     if (exitCode === 0) {
       // mujina-minerd is already running on this host and picks up the
       // freshly-flashed Bitaxe on its own USB scan — poll it locally to
@@ -114,26 +109,52 @@ function App() {
     }
   }
 
-  function isScreenReachable(s: Screen): boolean {
-    switch (s) {
-      case "scan":
-        return true;
+  // Determine current wizard step based on active screen
+  const currentStep = (() => {
+    switch (screen) {
+      case "discovery":
+        return 1;
       case "config":
-        return selected !== null;
-      case "installing":
-        // Disabled once an install has succeeded — re-entering would remount
-        // InstallLog and re-run the installer against a board that's already
-        // been flashed.
-        return installConfig !== null && installExitCode !== 0;
+      case "usb-confirm":
+        return 2;
+      case "deploying":
+        return 3;
       case "telemetry":
-        return telemetryIp !== null;
-      case "usb":
-        return true;
-      case "flash":
-        // Same re-entry guard as "installing": once a flash has succeeded,
-        // re-entering would remount BitaxeFlashLog and re-run espflash
-        // against a board that's already been flashed.
-        return usbFlashPort !== null && usbFlashExitCode !== 0;
+        return 4;
+      default:
+        return 1;
+    }
+  })();
+
+  const steps = [
+    { id: 1, label: "Discovery" },
+    { id: 2, label: "Configure & Review" },
+    { id: 3, label: "Deploying" },
+    { id: 4, label: "Monitor" },
+  ];
+
+  function handleStepperClick(stepId: number) {
+    if (stepId === 1) {
+      setSelected(null);
+      setUsbConfirmPending(null);
+      setInstallConfig(null);
+      setUsbFlashPort(null);
+      setPreviewText(null);
+      setScreen("discovery");
+    } else if (stepId === 2) {
+      if (selected) {
+        setScreen("config");
+      } else if (usbConfirmPending) {
+        setScreen("usb-confirm");
+      }
+    } else if (stepId === 3) {
+      if (installConfig || usbFlashPort) {
+        setScreen("deploying");
+      }
+    } else if (stepId === 4) {
+      if (telemetryIp) {
+        setScreen("telemetry");
+      }
     }
   }
 
@@ -170,93 +191,136 @@ function App() {
           <h1>Torii</h1>
         </header>
 
-        <nav className="screen-nav">
-          {(["scan", "config", "installing", "telemetry", "usb", "flash"] as Screen[]).map((s) => {
-            const reachable = isScreenReachable(s);
+        <nav className="wizard-stepper">
+          {steps.map((s) => {
+            const isActive = currentStep === s.id;
+            const isCompleted = currentStep > s.id;
+            const isClickable = isCompleted || s.id === 1;
+
             return (
-              <button
-                key={s}
-                className={[
-                  s === screen ? "screen-nav-active" : "",
-                  reachable ? "" : "screen-nav-disabled",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                disabled={!reachable}
-                onClick={() => reachable && setScreen(s)}
-              >
-                {s}
-              </button>
+              <div key={s.id} className="wizard-step-container" style={{ display: "flex", alignItems: "center", flex: s.id === 4 ? "0" : "1" }}>
+                <div
+                  className={[
+                    "wizard-step",
+                    isActive ? "wizard-step-active" : "",
+                    isCompleted ? "wizard-step-completed" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => isClickable && handleStepperClick(s.id)}
+                >
+                  <div className="wizard-step-number">{s.id}</div>
+                  <span>{s.label}</span>
+                </div>
+                {s.id < 4 && (
+                  <div
+                    className={[
+                      "wizard-step-divider",
+                      currentStep > s.id ? "wizard-step-divider-active" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  />
+                )}
+              </div>
             );
           })}
         </nav>
 
-        {screen === "scan" && <ScanTable onSelect={handleSelect} />}
+        {screen === "discovery" && (
+          <div className="discovery-container">
+            <div className="discovery-toggle-group">
+              <button
+                className={`discovery-toggle-btn ${discoveryMode === "lan" ? "discovery-toggle-btn-active" : ""}`}
+                onClick={() => setDiscoveryMode("lan")}
+              >
+                LAN Miner Scan
+              </button>
+              <button
+                className={`discovery-toggle-btn ${discoveryMode === "usb" ? "discovery-toggle-btn-active" : ""}`}
+                onClick={() => setDiscoveryMode("usb")}
+              >
+                USB Device Flash
+              </button>
+            </div>
 
-        {screen === "config" &&
-          (selected ? (
-            <>
+            {discoveryMode === "lan" ? (
+              <ScanTable onSelect={handleSelect} />
+            ) : (
+              <BitaxeUsbTable onSelect={handleUsbSelect} />
+            )}
+          </div>
+        )}
+
+        {screen === "config" && selected && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {previewText === null ? (
               <ConfigForm
                 record={selected.record}
                 scanFile={selected.scanFile}
                 onSubmit={handleConfigSubmit}
-                onBack={() => setScreen("scan")}
+                onBack={() => {
+                  setSelected(null);
+                  setScreen("discovery");
+                }}
               />
-              {previewError && <p className="error">{previewError}</p>}
-              {previewText !== null && (
-                <ConfirmModal
-                  previewText={previewText}
-                  onConfirm={handleConfirm}
-                  onCancel={handleCancelPreview}
-                />
-              )}
-            </>
-          ) : (
-            <p>No host selected — go back to the scan screen and pick one.</p>
-          ))}
-
-        {screen === "installing" &&
-          (installConfig ? (
-            <InstallLog config={installConfig} onDone={handleInstallDone} />
-          ) : (
-            <p>No install configured yet.</p>
-          ))}
-
-        {screen === "telemetry" &&
-          (telemetryIp ? <TelemetryView ip={telemetryIp} /> : <p>No host selected.</p>)}
-
-        {screen === "usb" && (
-          <>
-            <BitaxeUsbTable onSelect={handleUsbSelect} />
-            {usbConfirmPending && (
+            ) : (
               <ConfirmModal
-                title="Confirm bitaxe-raw flash"
-                warning="This writes new firmware onto the ESP32-S3 over USB."
-                actionLabel="Flash bitaxe-raw — this is destructive"
-                confirmDisabled={usbPeekLoading || usbUnsupported}
-                notice={usbNotice}
-                previewText={
-                  formatUsbDeviceSummary(usbConfirmPending) +
-                  "\n\n--- console output (read-only, 3s) ---\n" +
-                  (usbPeekLoading
-                    ? "listening..."
-                    : usbPeekText
-                      ? usbPeekText
-                      : "(nothing captured — the firmware may just be quiet right now; this doesn't rule the device out)")
-                }
-                onConfirm={handleUsbConfirm}
-                onCancel={() => setUsbConfirmPending(null)}
+                isInline={true}
+                previewText={previewText}
+                onConfirm={handleConfirm}
+                onCancel={handleCancelPreview}
               />
             )}
-          </>
+            {previewError && <p className="error">{previewError}</p>}
+          </div>
         )}
 
-        {screen === "flash" &&
-          (usbFlashPort ? (
-            <BitaxeFlashLog port={usbFlashPort} onDone={handleUsbFlashDone} />
-          ) : (
-            <p>No USB flash in progress.</p>
-          ))}
+        {screen === "usb-confirm" && usbConfirmPending && (
+          <ConfirmModal
+            isInline={true}
+            title="Confirm bitaxe-raw flash"
+            warning="This writes new firmware onto the ESP32-S3 over USB."
+            actionLabel="Flash bitaxe-raw — this is destructive"
+            confirmDisabled={usbPeekLoading || usbUnsupported}
+            notice={usbNotice}
+            previewText={
+              formatUsbDeviceSummary(usbConfirmPending) +
+              "\n\n--- console output (read-only, 3s) ---\n" +
+              (usbPeekLoading
+                ? "listening..."
+                : usbPeekText
+                  ? usbPeekText
+                  : "(nothing captured — the firmware may just be quiet right now; this doesn't rule the device out)")
+            }
+            onConfirm={handleUsbConfirm}
+            onCancel={() => {
+              setUsbConfirmPending(null);
+              setScreen("discovery");
+            }}
+          />
+        )}
+
+        {screen === "deploying" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {installConfig && (
+              <>
+                <h2>Installing over LAN: {installConfig.host}</h2>
+                <InstallLog config={installConfig} onDone={handleInstallDone} />
+              </>
+            )}
+            {usbFlashPort && (
+              <>
+                <h2>Flashing USB device on {usbFlashPort}</h2>
+                <BitaxeFlashLog port={usbFlashPort} onDone={handleUsbFlashDone} />
+              </>
+            )}
+          </div>
+        )}
+
+        {screen === "telemetry" && telemetryIp && (
+          <TelemetryView ip={telemetryIp} />
+        )}
         </div>
       </div>
     </main>
