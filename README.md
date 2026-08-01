@@ -58,6 +58,13 @@ structurally unable to reach the destructive step.
 
 ## Running it
 
+### Standalone Executable (Windows)
+For quick, zero-install execution on Windows, you can run the pre-compiled binaries located in the root of this repository:
+* **Raw Binary**: Run [torii.exe](file:///d:/github/torii/torii.exe) directly.
+* **Setup Installer**: Run [torii-setup.exe](file:///d:/github/torii/torii-setup.exe) to install it on your PC.
+
+### Development Mode (Cross-Platform)
+To run and develop from source:
 ```bash
 npm install
 npm run tauri dev
