@@ -28,4 +28,8 @@ serialport = "4"
 # runtime, so it needs the `tokio` feature to be awaited (see
 # mujina-miner's Cargo.toml, which hit the same panic on Windows first).
 nusb = { version = "0.2", features = ["tokio"] }
+futures = "0.3"
+asic-rs = { version = "0.7.3" }
+tokio = { version = "1", features = ["full"] }
+
 

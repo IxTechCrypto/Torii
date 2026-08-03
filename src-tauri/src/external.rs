@@ -3,40 +3,10 @@
 
 use std::path::Path;
 
-pub const DEFAULT_SCAN_BIN: &str = r"D:\github\mujina\.claude\worktrees\interesting-lehmann-2fc234\target\release\mujina-scan.exe";
 pub const DEFAULT_INSTALL_SCRIPT: &str = r"D:\github\mujina-loader\tools\network_install\install_mujina_aml.sh";
 pub const DEFAULT_BASH_EXE: &str = r"C:\Program Files\Git\bin\bash.exe";
 pub const DEFAULT_BITAXE_RAW_FIRMWARE_ELF: &str =
     r"D:\github\bitaxe-raw\target\xtensa-esp32s3-none-elf\release\bitaxe-raw";
-
-/// Resolve `mujina-scan.exe` by checking env VAR, relative workspace paths, or standard fallback.
-pub fn resolve_scan_bin() -> Result<String, String> {
-    if let Ok(path) = std::env::var("MUJINA_SCAN_BIN") {
-        if Path::new(&path).exists() {
-            return Ok(path);
-        }
-    }
-    let candidates = [
-        DEFAULT_SCAN_BIN,
-        r"..\mujina\target\release\mujina-scan.exe",
-        r"..\mujina\.claude\worktrees\interesting-lehmann-2fc234\target\release\mujina-scan.exe",
-    ];
-    for cand in candidates {
-        if Path::new(cand).exists() {
-            return Ok(cand.to_string());
-        }
-    }
-    if let Ok(output) = std::process::Command::new("where").arg("mujina-scan").output() {
-        if output.status.success() {
-            if let Some(first) = String::from_utf8_lossy(&output.stdout).lines().next().map(str::trim) {
-                if !first.is_empty() {
-                    return Ok(first.to_string());
-                }
-            }
-        }
-    }
-    Ok(DEFAULT_SCAN_BIN.to_string())
-}
 
 /// Resolve `install_mujina_aml.sh` by checking env VAR or relative workspace paths.
 pub fn resolve_install_script() -> Result<String, String> {
