@@ -757,3 +757,154 @@ input:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--cyan);
 }
+
+/* --- flash success modal --- */
+
+.flash-success-modal-wrap {
+  max-width: 620px;
+  width: 92%;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 242, 0.4)) drop-shadow(0 0 50px rgba(27, 255, 156, 0.2));
+}
+
+.flash-success-ring {
+  position: absolute;
+  inset: -1px;
+  clip-path: var(--shape-lg);
+  background: linear-gradient(135deg, var(--cyan), #1bff9c);
+}
+
+.flash-success-modal {
+  padding: 1.5rem 1.75rem;
+}
+
+.flash-success-header {
+  margin-bottom: 1.1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.9rem;
+}
+
+.flash-success-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  padding: 0.2rem 0.6rem;
+  background: rgba(27, 255, 156, 0.15);
+  color: #1bff9c;
+  border: 1px solid rgba(27, 255, 156, 0.4);
+  clip-path: var(--shape-sm);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.flash-success-title {
+  color: #fff;
+  font-size: 1.4rem;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.35rem;
+  text-shadow: 0 0 10px rgba(0, 255, 242, 0.7);
+}
+
+.flash-success-model {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.flash-success-model strong {
+  color: var(--cyan);
+}
+
+.flash-success-intro {
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+.flash-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1.15rem;
+}
+
+.flash-step-item {
+  display: flex;
+  gap: 0.85rem;
+  background: rgba(14, 20, 32, 0.75);
+  border: 1px solid var(--border);
+  padding: 0.7rem 0.85rem;
+  clip-path: var(--shape-sm);
+}
+
+.flash-step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 255, 242, 0.15);
+  color: var(--cyan);
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  border: 1px solid var(--cyan-dim);
+}
+
+.flash-step-heading {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--cyan);
+  letter-spacing: 0.04em;
+  margin-bottom: 0.2rem;
+}
+
+.flash-step-desc {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
+.flash-step-desc code {
+  background: #020204;
+  padding: 0.1rem 0.3rem;
+  border: 1px solid var(--border);
+  color: #1bff9c;
+}
+
+.flash-step-desc a {
+  color: var(--cyan);
+  text-decoration: underline;
+}
+
+.flash-success-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.flash-btn-primary {
+  background: rgba(0, 255, 242, 0.2);
+  color: #fff;
+  border: 1px solid var(--cyan);
+  font-weight: 700;
+  padding: 0.55rem 1.1rem;
+}
+
+.flash-btn-primary:hover:not(:disabled) {
+  background: rgba(0, 255, 242, 0.35);
+  filter: drop-shadow(0 0 10px rgba(0, 255, 242, 0.6));
+}
+
+.flash-btn-secondary {
+  background: var(--bg-panel-alt);
+  color: var(--text-dim);
+  padding: 0.55rem 0.9rem;
+}
+
+.flash-btn-secondary:hover:not(:disabled) {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+

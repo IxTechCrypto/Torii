@@ -6,6 +6,7 @@ import InstallLog from "./components/InstallLog";
 import TelemetryView from "./components/TelemetryView";
 import BitaxeUsbTable from "./components/BitaxeUsbTable";
 import BitaxeFlashLog from "./components/BitaxeFlashLog";
+import FlashSuccessModal from "./components/FlashSuccessModal";
 import { peekUsbSerial, preview } from "./api";
 import { detectAsic } from "./asic";
 import { formatUsbDeviceSummary, type HostRecord, type InstallConfig, type UsbDeviceRecord } from "./types";
@@ -27,6 +28,7 @@ function App() {
   const [usbPeekLoading, setUsbPeekLoading] = useState(false);
   const [usbFlashPort, setUsbFlashPort] = useState<string | null>(null);
   const [selectedHardwareModel, setSelectedHardwareModel] = useState<"gamma" | "nerdqaxe-pp">("gamma");
+  const [showFlashSuccessModal, setShowFlashSuccessModal] = useState(false);
 
   // Whenever a candidate device is up for confirmation, listen on its port
   // for a few seconds and capture whatever the firmware already running on
@@ -45,7 +47,7 @@ function App() {
         if (!cancelled) setUsbPeekText(text);
       })
       .catch((e) => {
-        if (!cancelled) setUsbPeekText(`(couldn't read console: ${String(e)})`);
+        if (!cancelled) setUsbPeekText(`(peek error: ${e})`);
       })
       .finally(() => {
         if (!cancelled) setUsbPeekLoading(false);
@@ -107,12 +109,24 @@ function App() {
 
   function handleUsbFlashDone(exitCode: number) {
     if (exitCode === 0) {
-      // mujina-minerd is already running on this host and picks up the
-      // freshly-flashed Bitaxe on its own USB scan — poll it locally to
-      // confirm rather than sending the user off to check some other way.
-      setTelemetryIp("127.0.0.1");
-      setScreen("telemetry");
+      setShowFlashSuccessModal(true);
     }
+  }
+
+  function handleProceedToMonitor() {
+    setShowFlashSuccessModal(false);
+    setTelemetryIp("127.0.0.1");
+    setScreen("telemetry");
+  }
+
+  function handleBackToDevices() {
+    setShowFlashSuccessModal(false);
+    setSelected(null);
+    setUsbConfirmPending(null);
+    setUsbFlashPort(null);
+    setPreviewText(null);
+    setDiscoveryMode("usb");
+    setScreen("discovery");
   }
 
   // Determine current wizard step based on active screen
@@ -354,6 +368,14 @@ function App() {
 
         {screen === "telemetry" && telemetryIp && (
           <TelemetryView ip={telemetryIp} />
+        )}
+
+        {showFlashSuccessModal && (
+          <FlashSuccessModal
+            model={selectedHardwareModel}
+            onProceedToMonitor={handleProceedToMonitor}
+            onBackToDevices={handleBackToDevices}
+          />
         )}
         </div>
       </div>
