@@ -81,21 +81,38 @@ export function isFlashCandidate(d: UsbDeviceRecord): boolean {
   return d.status === "flash-candidate";
 }
 
+export function isFlashable(_d: UsbDeviceRecord): boolean {
+  return true;
+}
+
 function hex4(n: number): string {
   return n.toString(16).padStart(4, "0").toUpperCase();
 }
 
 export function formatUsbDeviceSummary(d: UsbDeviceRecord): string {
+  const isRaw = d.status === "raw-installed";
+  const note = isRaw
+    ? [
+        "This device is already running bitaxe-raw firmware.",
+        "Proceeding will re-flash it with the selected hardware model firmware.",
+        "If re-flashing fails to connect, hold the physical BOOT button while",
+        "attaching power/USB to enter the ROM bootloader.",
+      ]
+    : [
+        "This VID/PID is the ESP32-S3's generic default identity, not unique to",
+        "Bitaxe boards — any other unflashed ESP32-S3 device would match it too.",
+        "Confirm this is actually your Bitaxe (e.g. unplug it and check this",
+        "entry disappears) before flashing.",
+      ];
+
   return [
     `Port: ${d.port}`,
     `VID:PID: ${hex4(d.vid)}:${hex4(d.pid)}`,
     `Manufacturer: ${d.manufacturer ?? "—"}`,
     `Product: ${d.product ?? "—"}`,
     `Serial: ${d.serial_number ?? "—"}`,
+    `Status: ${d.status}`,
     "",
-    "This VID/PID is the ESP32-S3's generic default identity, not unique to",
-    "Bitaxe boards — any other unflashed ESP32-S3 device would match it too.",
-    "Confirm this is actually your Bitaxe (e.g. unplug it and check this",
-    "entry disappears) before flashing.",
+    ...note,
   ].join("\n");
 }

@@ -3,10 +3,11 @@ import { flashBitaxeRaw, onBitaxeFlashDone, onBitaxeFlashLog } from "../api";
 
 interface Props {
   port: string;
+  model?: string;
   onDone: (exitCode: number) => void;
 }
 
-export default function BitaxeFlashLog({ port, onDone }: Props) {
+export default function BitaxeFlashLog({ port, model, onDone }: Props) {
   const [lines, setLines] = useState<string[]>([]);
   const [exitCode, setExitCode] = useState<number | null>(null);
   const preRef = useRef<HTMLPreElement>(null);
@@ -39,7 +40,7 @@ export default function BitaxeFlashLog({ port, onDone }: Props) {
       if (hasStartedRef.current) return;
       hasStartedRef.current = true;
       try {
-        await flashBitaxeRaw(port);
+        await flashBitaxeRaw(port, model);
       } catch (e) {
         setLines((prev) => [...prev, `error: ${String(e)}`]);
       }
@@ -57,9 +58,11 @@ export default function BitaxeFlashLog({ port, onDone }: Props) {
     preRef.current?.scrollTo({ top: preRef.current.scrollHeight });
   }, [lines]);
 
+  const modelLabel = model === "nerdqaxe-pp" ? "NerdQAxe++" : "Bitaxe Gamma";
+
   return (
     <div>
-      <h2>Flashing bitaxe-raw onto {port}</h2>
+      <h2>Flashing bitaxe-raw ({modelLabel}) onto {port}</h2>
       <div className="install-log-frame">
         <pre ref={preRef} className="install-log">
           {lines.join("\n")}

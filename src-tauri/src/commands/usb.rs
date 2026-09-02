@@ -20,6 +20,7 @@ use serialport::SerialPortType;
 
 const BITAXE_RAW_VID: u16 = 0xc0de;
 const BITAXE_RAW_PID: u16 = 0xcafe;
+const BITAXE_RAW_NERDQAXE_PP_PID: u16 = 0xcaf1;
 const ESP32S3_GENERIC_VID: u16 = 0x303a;
 const ESP32S3_GENERIC_PID: u16 = 0x1001;
 
@@ -43,7 +44,9 @@ pub struct UsbDeviceRecord {
 
 fn classify(vid: u16, pid: u16) -> Option<BitaxeUsbStatus> {
     match (vid, pid) {
-        (BITAXE_RAW_VID, BITAXE_RAW_PID) => Some(BitaxeUsbStatus::RawInstalled),
+        (BITAXE_RAW_VID, BITAXE_RAW_PID) | (BITAXE_RAW_VID, BITAXE_RAW_NERDQAXE_PP_PID) => {
+            Some(BitaxeUsbStatus::RawInstalled)
+        }
         (ESP32S3_GENERIC_VID, ESP32S3_GENERIC_PID) => Some(BitaxeUsbStatus::FlashCandidate),
         _ => None,
     }
@@ -55,11 +58,12 @@ fn classify(vid: u16, pid: u16) -> Option<BitaxeUsbStatus> {
 /// vendor-ID assignment, not a per-device descriptor string:
 ///   - `0x303A` is Espressif's registered VID — the ESP32-S3's built-in USB
 ///     identity, i.e. what a stock/unflashed Bitaxe presents.
-///   - `0xc0de` is the VID bitaxe-raw's own firmware declares (`OSMU`).
-fn vid_vendor_name(vid: u16) -> Option<&'static str> {
-    match vid {
-        ESP32S3_GENERIC_VID => Some("Espressif Systems"),
-        BITAXE_RAW_VID => Some("OSMU"),
+///   - `0xc0de` is the VID bitaxe-raw's own firmware declares (`OSMU` / `shufps`).
+fn vid_vendor_name(vid: u16, pid: u16) -> Option<&'static str> {
+    match (vid, pid) {
+        (ESP32S3_GENERIC_VID, _) => Some("Espressif Systems"),
+        (BITAXE_RAW_VID, BITAXE_RAW_NERDQAXE_PP_PID) => Some("shufps"),
+        (BITAXE_RAW_VID, _) => Some("OSMU"),
         _ => None,
     }
 }
@@ -132,15 +136,24 @@ pub async fn enumerate() -> Result<Vec<UsbDeviceRecord>, String> {
         info.manufacturer = matched
             .and_then(|d| d.manufacturer_string())
             .map(str::to_string)
-            .or_else(|| vid_vendor_name(info.vid).map(str::to_string));
+            .or_else(|| vid_vendor_name(info.vid, info.pid).map(str::to_string));
 
         // Prefer nusb's real device-reported product string; fall back to
-        // serialport's synthetic friendly name only if nusb has none.
+        // model-specific name or serialport's synthetic friendly name.
+        let fallback_product = match (info.vid, info.pid) {
+            (BITAXE_RAW_VID, BITAXE_RAW_PID) => Some("Bitaxe Gamma".to_string()),
+            (BITAXE_RAW_VID, BITAXE_RAW_NERDQAXE_PP_PID) => Some("NerdQAxe++".to_string()),
+            _ => None,
+        };
+
         if let Some(real) = matched {
             info.product = real
                 .product_string()
                 .map(str::to_string)
+                .or_else(|| fallback_product.clone())
                 .or_else(|| info.product.take());
+        } else if info.product.is_none() {
+            info.product = fallback_product;
         }
 
         records.push(UsbDeviceRecord {

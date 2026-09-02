@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { listUsbDevices } from "../api";
-import { isFlashCandidate, type UsbDeviceRecord } from "../types";
+import { type UsbDeviceRecord } from "../types";
 
 interface Props {
   onSelect: (record: UsbDeviceRecord) => void;
@@ -43,9 +43,8 @@ export default function BitaxeUsbTable({ onSelect }: Props) {
       {devices.length > 0 && (
         <>
           <p className="scan-hint">
-            "flash-candidate" devices match the ESP32-S3's generic default USB identity —
-            that's not unique to a Bitaxe, so double-check before flashing. "raw-installed"
-            devices are already running bitaxe-raw and aren't selectable here.
+            "flash-candidate" devices match the ESP32-S3's generic default USB identity (stock AxeOS).
+            "raw-installed" devices are running bitaxe-raw firmware. Click any device to flash or re-flash.
           </p>
           <div className="scan-table-wrap">
             <div className="scan-table-ring" aria-hidden="true" />
@@ -61,13 +60,12 @@ export default function BitaxeUsbTable({ onSelect }: Props) {
               </thead>
               <tbody>
                 {devices.map((d) => {
-                  const flashable = isFlashCandidate(d);
                   return (
                     <tr
                       key={d.port}
-                      className={flashable ? "row-installable" : "row-disabled"}
-                      title={flashable ? undefined : "already running bitaxe-raw"}
-                      onClick={() => flashable && onSelect(d)}
+                      className="row-installable"
+                      title={d.status === "flash-candidate" ? "Stock firmware (ready to flash)" : "Already running bitaxe-raw (click to re-flash)"}
+                      onClick={() => onSelect(d)}
                     >
                       <td>{d.port}</td>
                       <td>

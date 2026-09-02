@@ -28,9 +28,9 @@ Torii is a single guided wizard path from "unprovisioned hardware" to "mining un
 5. **Telemetry** — Once Mujina starts, poll hashrate, temperatures, and fan speeds in a real-time monitor.
 
 ### B. USB Firmware Flash (Bitaxe & NerdQAxe++ Hardware)
-1. **Discovery** — Scans USB serial ports for ESP32-S3 chips. Unflashed devices (VID `0x303a`/PID `0x1001`) are classified as flash candidates. Already-flashed boards show as `raw-installed` (VID `0xc0de`/PID `0xcafe`).
-2. **ASIC & Model Review** — Peeks at the board's console logs over UART for 3 seconds. It auto-detects the ASIC model:
-   - **Supported**: Bitaxe Gamma / NerdQAxe++ (BM1370 ASIC).
+1. **Discovery** — Scans USB serial ports for ESP32-S3 chips. Unflashed stock devices (VID `0x303a`/PID `0x1001`) are classified as flash candidates. Already-flashed boards show as `raw-installed` (VID `0xc0de`/PID `0xcafe` for Bitaxe Gamma, or `0xcaf1` for NerdQAxe++). All detected boards are selectable for flashing or re-flashing.
+2. **ASIC & Hardware Model Review** — Peeks at the board's console logs over UART for 3 seconds:
+   - **Supported**: Bitaxe Gamma (BM1370, 1 chip) and NerdQAxe++ (BM1370, 4 chips). An explicit **Target Hardware Model** selector allows choosing which hardware variant to target, ensuring the proper firmware image (`bitaxe-raw-gamma` or `bitaxe-raw-nerdqaxe-pp`) is flashed.
    - **Safety-Blocked**: Bitaxe Ultra (BM1366 ASIC) or unrecognized boards are blocked from flashing in the UI to prevent overwriting AxeOS/ESP-Miner for an unsupported hardware target.
 3. **Deploy** — Spawns `espflash` over USB with the native JTAG `--before usb-reset` configuration, streaming flash percentages live.
 4. **Telemetry** — Automatically configures telemetry monitoring to point to the local host (`127.0.0.1:7785`), where the resident `mujina-minerd` auto-detects and drives the newly flashed board.

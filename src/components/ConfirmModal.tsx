@@ -13,6 +13,7 @@ interface Props {
   notice?: { level: "danger" | "info"; text: string } | null;
   // Render inline as a card instead of fixed screen-blocking overlay
   isInline?: boolean;
+  children?: React.ReactNode;
 }
 
 export default function ConfirmModal({
@@ -25,6 +26,7 @@ export default function ConfirmModal({
   confirmDisabled = false,
   notice = null,
   isInline = false,
+  children,
 }: Props) {
   const content = (
     <div className="confirm-modal-wrap" style={isInline ? { width: "100%", maxWidth: "100%", maxHeight: "none" } : undefined}>
@@ -37,6 +39,7 @@ export default function ConfirmModal({
             {notice.text}
           </p>
         )}
+        {children}
         <pre className="confirm-modal-preview" style={isInline ? { maxHeight: "300px" } : undefined}>{previewText}</pre>
         <div className="confirm-modal-actions">
           <button type="button" onClick={onCancel}>

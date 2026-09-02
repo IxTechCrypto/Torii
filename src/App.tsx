@@ -26,6 +26,7 @@ function App() {
   const [usbPeekText, setUsbPeekText] = useState<string | null>(null);
   const [usbPeekLoading, setUsbPeekLoading] = useState(false);
   const [usbFlashPort, setUsbFlashPort] = useState<string | null>(null);
+  const [selectedHardwareModel, setSelectedHardwareModel] = useState<"gamma" | "nerdqaxe-pp">("gamma");
 
   // Whenever a candidate device is up for confirmation, listen on its port
   // for a few seconds and capture whatever the firmware already running on
@@ -90,6 +91,11 @@ function App() {
 
   function handleUsbSelect(record: UsbDeviceRecord) {
     setUsbConfirmPending(record);
+    if (record.product?.toLowerCase().includes("nerdqaxe") || record.pid === 0xcaf1) {
+      setSelectedHardwareModel("nerdqaxe-pp");
+    } else {
+      setSelectedHardwareModel("gamma");
+    }
     setScreen("usb-confirm");
   }
 
@@ -281,7 +287,7 @@ function App() {
             isInline={true}
             title="Confirm bitaxe-raw flash"
             warning="This writes new firmware onto the ESP32-S3 over USB."
-            actionLabel="Flash bitaxe-raw — this is destructive"
+            actionLabel={`Flash bitaxe-raw (${selectedHardwareModel === "nerdqaxe-pp" ? "NerdQAxe++" : "Bitaxe Gamma"})`}
             confirmDisabled={usbPeekLoading || usbUnsupported}
             notice={usbNotice}
             previewText={
@@ -298,7 +304,35 @@ function App() {
               setUsbConfirmPending(null);
               setScreen("discovery");
             }}
-          />
+          >
+            <div style={{ margin: "1rem 0", padding: "0.75rem 1rem", backgroundColor: "var(--bg-panel-alt)", border: "1px solid var(--border)", borderRadius: "4px" }}>
+              <div style={{ fontWeight: "bold", fontSize: "0.9rem", marginBottom: "0.5rem", color: "var(--cyan)" }}>
+                Target Hardware Model:
+              </div>
+              <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="hardwareModel"
+                    value="gamma"
+                    checked={selectedHardwareModel === "gamma"}
+                    onChange={() => setSelectedHardwareModel("gamma")}
+                  />
+                  <span>Bitaxe Gamma (BM1370, 1 chip, 0xcafe)</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="hardwareModel"
+                    value="nerdqaxe-pp"
+                    checked={selectedHardwareModel === "nerdqaxe-pp"}
+                    onChange={() => setSelectedHardwareModel("nerdqaxe-pp")}
+                  />
+                  <span>NerdQAxe++ (BM1370, 4 chips, 0xcaf1)</span>
+                </label>
+              </div>
+            </div>
+          </ConfirmModal>
         )}
 
         {screen === "deploying" && (
@@ -312,7 +346,7 @@ function App() {
             {usbFlashPort && (
               <>
                 <h2>Flashing USB device on {usbFlashPort}</h2>
-                <BitaxeFlashLog port={usbFlashPort} onDone={handleUsbFlashDone} />
+                <BitaxeFlashLog port={usbFlashPort} model={selectedHardwareModel} onDone={handleUsbFlashDone} />
               </>
             )}
           </div>

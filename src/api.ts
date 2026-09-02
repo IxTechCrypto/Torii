@@ -44,8 +44,8 @@ export function peekUsbSerial(port: string): Promise<string> {
   return invoke("peek_usb_serial", { port });
 }
 
-export function flashBitaxeRaw(port: string): Promise<number> {
-  return invoke("flash_bitaxe_raw", { port });
+export function flashBitaxeRaw(port: string, model?: string): Promise<number> {
+  return invoke("flash_bitaxe_raw", { port, model });
 }
 
 // Event contract for the `flash_bitaxe_raw` command:

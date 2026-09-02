@@ -7,6 +7,10 @@ pub const DEFAULT_INSTALL_SCRIPT: &str = r"D:\github\mujina-loader\tools\network
 pub const DEFAULT_BASH_EXE: &str = r"C:\Program Files\Git\bin\bash.exe";
 pub const DEFAULT_BITAXE_RAW_FIRMWARE_ELF: &str =
     r"D:\github\bitaxe-raw\target\xtensa-esp32s3-none-elf\release\bitaxe-raw";
+pub const DEFAULT_BITAXE_RAW_GAMMA_ELF: &str =
+    r"D:\github\bitaxe-raw\bin\bitaxe-raw-gamma";
+pub const DEFAULT_BITAXE_RAW_NERDQAXE_PP_ELF: &str =
+    r"D:\github\bitaxe-raw\bin\bitaxe-raw-nerdqaxe-pp";
 
 /// Resolve `install_mujina_aml.sh` by checking env VAR or relative workspace paths.
 pub fn resolve_install_script() -> Result<String, String> {
@@ -27,14 +31,26 @@ pub fn resolve_install_script() -> Result<String, String> {
     Ok(DEFAULT_INSTALL_SCRIPT.to_string())
 }
 
-/// Resolve `bitaxe-raw` firmware ELF.
-pub fn resolve_bitaxe_raw_elf() -> Result<String, String> {
+/// Resolve `bitaxe-raw` firmware ELF for a specific hardware model.
+/// Supports "gamma" (default) and "nerdqaxe-pp".
+pub fn resolve_bitaxe_raw_elf(model: Option<&str>) -> Result<String, String> {
     if let Ok(path) = std::env::var("BITAXE_RAW_FIRMWARE_ELF") {
         if Path::new(&path).exists() {
             return Ok(path);
         }
     }
+
+    let default_model_path = match model.unwrap_or("gamma") {
+        "nerdqaxe-pp" => DEFAULT_BITAXE_RAW_NERDQAXE_PP_ELF,
+        _ => DEFAULT_BITAXE_RAW_GAMMA_ELF,
+    };
+
+    if Path::new(default_model_path).exists() {
+        return Ok(default_model_path.to_string());
+    }
+
     let candidates = [
+        default_model_path,
         DEFAULT_BITAXE_RAW_FIRMWARE_ELF,
         r"..\bitaxe-raw\target\xtensa-esp32s3-none-elf\release\bitaxe-raw",
     ];
@@ -43,7 +59,7 @@ pub fn resolve_bitaxe_raw_elf() -> Result<String, String> {
             return Ok(cand.to_string());
         }
     }
-    Ok(DEFAULT_BITAXE_RAW_FIRMWARE_ELF.to_string())
+    Ok(default_model_path.to_string())
 }
 
 /// Resolve a usable git-bash executable: the well-known Git-for-Windows

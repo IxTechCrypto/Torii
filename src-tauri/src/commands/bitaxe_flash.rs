@@ -9,29 +9,27 @@ use std::process::{Command, Stdio};
 
 use tauri::Emitter;
 
-use crate::commands::usb::{enumerate, BitaxeUsbStatus};
+use crate::commands::usb::enumerate;
 use crate::external::{resolve_bitaxe_raw_elf, resolve_espflash};
 
 #[tauri::command]
-pub async fn flash_bitaxe_raw(app: tauri::AppHandle, port: String) -> Result<i32, String> {
-    // Independent server-side re-check — never trust the client's
-    // classification of the port. A fresh enumeration must show this exact
-    // port as a flash candidate right before we touch it.
+pub async fn flash_bitaxe_raw(
+    app: tauri::AppHandle,
+    port: String,
+    model: Option<String>,
+) -> Result<i32, String> {
+    // Independent server-side re-check — verify the port exists in fresh scan.
     let devices = enumerate().await?;
-    let device = devices
+    let _device = devices
         .iter()
         .find(|d| d.port == port)
         .ok_or_else(|| format!("USB device on {port} not found in a fresh scan"))?;
-    if device.status != BitaxeUsbStatus::FlashCandidate {
-        return Err(format!(
-            "refusing flash: device on {port} is not a flash candidate"
-        ));
-    }
 
-    let firmware_elf = resolve_bitaxe_raw_elf()?;
+    let model_str = model.as_deref().unwrap_or("gamma");
+    let firmware_elf = resolve_bitaxe_raw_elf(Some(model_str))?;
     if !std::path::Path::new(&firmware_elf).exists() {
         return Err(format!(
-            "bitaxe-raw firmware not found at {firmware_elf}; run `cargo build --release` in the bitaxe-raw workspace"
+            "bitaxe-raw firmware for model '{model_str}' not found at {firmware_elf}; run `cargo build --release` or verify D:\\github\\bitaxe-raw\\bin"
         ));
     }
 
