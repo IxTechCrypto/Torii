@@ -64,18 +64,30 @@ struct KnownImage {
     role: Nano3sImageRole,
 }
 
-const KNOWN_IMAGES: &[KnownImage] = &[KnownImage {
-    // Canaan's stock image, packed with their own `scripts/sdkbuild` from the
-    // prebuilt resources in Canaan-Creative/Avalon_Nano3s at 04c84d3 (the
-    // compiler download was unavailable, so `cg_miner` is Canaan's prebuilt
-    // binary rather than a fresh compile). Header v1, chip K230, board
-    // K230_nano3, 10 partitions, each SHA-256 checked by k230-flash's own
-    // parser. Repacking gives a different hash: the UBI images embed
-    // timestamps.
-    sha256: "a5c1e591853b49552b70cdd77030faee8a8c520fcfd7e0537b138ef58b349027",
-    label: "Canaan Nano 3S stock (Avalon_Nano3s 04c84d3)",
-    role: Nano3sImageRole::Stock,
-}];
+const KNOWN_IMAGES: &[KnownImage] = &[
+    KnownImage {
+        // Canaan's stock image, packed with their own `scripts/sdkbuild` from the
+        // prebuilt resources in Canaan-Creative/Avalon_Nano3s at 04c84d3 (the
+        // compiler download was unavailable, so `cg_miner` is Canaan's prebuilt
+        // binary rather than a fresh compile). Header v1, chip K230, board
+        // K230_nano3, 10 partitions, each SHA-256 checked by k230-flash's own
+        // parser. Repacking gives a different hash: the UBI images embed
+        // timestamps.
+        sha256: "a5c1e591853b49552b70cdd77030faee8a8c520fcfd7e0537b138ef58b349027",
+        label: "Canaan Nano 3S stock (Avalon_Nano3s 04c84d3)",
+        role: Nano3sImageRole::Stock,
+    },
+    KnownImage {
+        // nano-mujina alpha-v3 full-flash image, matching the SHA-256 GitHub
+        // lists for the release asset at
+        // github.com/aadhi1014/nano-mujina/releases/tag/alpha-v3. Unlike
+        // Canaan's image it also writes the `data` partition (0xC800000), so
+        // saved Wi-Fi and pool settings are reset.
+        sha256: "2065e8ce563c627a5b0f20c21eb9d57b870373dae2a006e6e6f177f09507466e",
+        label: "nano-mujina alpha-v3",
+        role: Nano3sImageRole::Mujina,
+    },
+];
 
 #[derive(serde::Serialize, Clone, Debug)]
 pub struct K230BurnDevice {
