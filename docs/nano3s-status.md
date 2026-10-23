@@ -7,6 +7,13 @@
   Wi-Fi, got a DHCP address (192.168.4.61 at the time; hostname `canaan`) and
   the screen shows MINING. The image file itself isn't kept anywhere: it
   carries the Wi-Fi key.
+- **A second Nano 3S stays on Canaan stock** (192.168.4.67 at the time):
+  cgminer 4.11.1 API on port 4028, firmware MM319 build 25061101. It's the
+  control unit for stock vs nano-mujina comparisons. nano-mujina runs no
+  cgminer and nothing listens on 4028 (aadhi's `fb_hijack/src/fb_button.rs`),
+  so a 4028 answer means stock firmware and a 7785 scan finds neither unit.
+  Its 25061101 is newer than the rollback image Torii knows
+  (25012001_85ce93f).
 - **Pool isn't set.** The boot script's pool user is the placeholder
   `YOUR_WALLET.YOUR_WORKER` on `stratum+tcp://pool.256foundation.org:3333`.
   Set it at `http://<ip>/pool`. It's saved to `/data/userconfig/pool.conf`,
