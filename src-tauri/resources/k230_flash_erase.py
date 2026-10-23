@@ -10,11 +10,14 @@ in place and can stop the board booting. This wrapper adds the erase and
 otherwise runs k230-flash unchanged, with the same arguments and exit codes.
 """
 
+import inspect
+import re
 import struct
 import sys
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 
 import k230_flash.burners as burners
+import k230_flash.kdimg_utils as kdimg_utils
 from k230_flash.kdimage import get_kdimage_items
 from k230_flash.main import main
 
@@ -25,15 +28,42 @@ ERASE_TIMEOUT_MS = 60_000
 # k230-flash writes .kdimg partitions through write_image_stream from 1.3.0;
 # 1.2.x calls write_image instead, which this wrapper doesn't hook.
 MIN_K230_FLASH = (1, 3, 0)
+TOO_OLD = "this k230-flash doesn't write through write_image_stream, so Torii can't erase " \
+    "before writing; update it with `pip install -U k230-flash` (1.3.0 or newer)"
 
 
-def check_k230_flash_version(installed):
-    """Raise unless `installed` (a version string) is at least MIN_K230_FLASH."""
-    parts = tuple(int(p) for p in installed.split("+")[0].split(".")[:3] if p.isdigit())
-    if parts < MIN_K230_FLASH:
-        wanted = ".".join(map(str, MIN_K230_FLASH))
-        raise SystemExit(f"k230-flash {installed} is too old; Torii needs {wanted} or newer "
-                         f"(pip install -U k230-flash)")
+def version_tuple(text):
+    """Leading numeric release of a version string, padded to 3 parts:
+    "1.3" -> (1, 3, 0), "1.3.post1" -> (1, 3, 0), "1.4.0.dev3+g1" -> (1, 4, 0)."""
+    parts = []
+    for part in text.split("+")[0].split("."):
+        digits = re.match(r"\d+", part)
+        if not digits:
+            break
+        parts.append(int(digits.group()))
+        if digits.group() != part:
+            break
+    return tuple((parts + [0, 0, 0])[:3])
+
+
+def check_hook_supported(write_kdimg):
+    """Exit unless k230-flash's write_kdimg writes through write_image_stream.
+
+    Reads write_kdimg's source when it's available, since that is exactly
+    what the hook depends on; otherwise falls back to the package version.
+    """
+    try:
+        if "write_image_stream" in inspect.getsource(write_kdimg):
+            return
+        raise SystemExit(TOO_OLD)
+    except (OSError, TypeError):
+        pass
+    try:
+        installed = version("k230-flash")
+    except PackageNotFoundError:
+        raise SystemExit("can't tell which k230-flash is installed; " + TOO_OLD)
+    if version_tuple(installed) < MIN_K230_FLASH:
+        raise SystemExit(f"k230-flash {installed}: " + TOO_OLD)
 
 
 def erase_range(offset, write_size, part_erase_size, medium_erase_size):
@@ -102,6 +132,6 @@ def erasing_write_kdimg(original):
 
 
 if __name__ == "__main__":
-    check_k230_flash_version(version("k230-flash"))
+    check_hook_supported(kdimg_utils.write_kdimg)
     burners.write_kdimg = erasing_write_kdimg(burners.write_kdimg)
     sys.exit(main())

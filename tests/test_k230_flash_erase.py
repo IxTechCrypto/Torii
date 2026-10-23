@@ -72,11 +72,22 @@ class EraseRangeTest(unittest.TestCase):
 
 
 class GuardTest(unittest.TestCase):
-    def test_rejects_k230_flash_before_1_3(self):
+    def test_version_tuple(self):
+        for text, expected in [("1.4.0", (1, 4, 0)), ("1.3", (1, 3, 0)), ("1.3.post1", (1, 3, 0)),
+                               ("1.3.0rc1", (1, 3, 0)), ("1.4.0.dev3+gabc", (1, 4, 0)),
+                               ("1.10.0", (1, 10, 0)), ("2", (2, 0, 0)), ("1.2.1.dev5+g1", (1, 2, 1))]:
+            self.assertEqual(wrapper.version_tuple(text), expected, text)
+
+    def test_accepts_installed_k230_flash(self):
+        wrapper.check_hook_supported(kdimg_utils.write_kdimg)
+
+    def test_rejects_write_kdimg_without_stream_writes(self):
+        # Shaped like k230-flash 1.2.x, which wrote through write_image.
+        def write_kdimg(kdimg_path, burner, selected_partitions=None):
+            burner.write_image(b"", 0)
+
         with self.assertRaises(SystemExit):
-            wrapper.check_k230_flash_version("1.2.0")
-        wrapper.check_k230_flash_version("1.3.0")
-        wrapper.check_k230_flash_version("1.4.0")
+            wrapper.check_hook_supported(write_kdimg)
 
     def test_fails_when_writes_bypass_the_hook(self):
         # k230-flash 1.2.x wrote through write_image, never write_image_stream.
