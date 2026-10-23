@@ -187,10 +187,22 @@ fn sha256_range(file: &mut File, offset: u64, len: u64) -> Result<[u8; 32], Stri
     Ok(hasher.finalize().into())
 }
 
+/// Trim whitespace and the double quotes Windows' "Copy as path" adds.
+fn clean_image_path(path: &str) -> String {
+    let path = path.trim();
+    path.strip_prefix('"')
+        .and_then(|p| p.strip_suffix('"'))
+        .unwrap_or(path)
+        .trim()
+        .to_string()
+}
+
 /// Validate a `.kdimg` for the Nano 3S. Structural damage (bad magic or
 /// CRC, truncation) is an `Err`; anything else lands in `problems` or
 /// `warnings` so the UI can show the full picture.
 pub fn inspect_kdimg_file(path: &Path, role: Nano3sImageRole) -> Result<KdimgInfo, String> {
+    let cleaned = clean_image_path(&path.to_string_lossy());
+    let path = Path::new(&cleaned);
     let mut file = File::open(path).map_err(|e| format!("cannot open {}: {e}", path.display()))?;
     let file_size = file
         .metadata()
@@ -444,7 +456,7 @@ pub async fn flash_nano3s(
     let mut cmd = Command::new(&program);
     cmd.args(&prefix_args)
         .args(["--media-type", "SPI_NAND", "--log-level", "INFO"])
-        .arg(&image_path)
+        .arg(&info.path)
         .env("PYTHONUNBUFFERED", "1")
         .env("PYTHONIOENCODING", "utf-8")
         .stdout(Stdio::piped())
@@ -674,6 +686,18 @@ mod tests {
         let info = inspect_kdimg_file(Path::new(&path), Nano3sImageRole::Stock).unwrap();
         println!("{info:#?}");
         assert!(info.problems.is_empty(), "{:?}", info.problems);
+    }
+
+    #[test]
+    fn strips_copy_as_path_quotes() {
+        assert_eq!(
+            clean_image_path(r#" "D:\downloads\a.kdimg" "#),
+            r"D:\downloads\a.kdimg"
+        );
+        assert_eq!(
+            clean_image_path(r"D:\downloads\a.kdimg"),
+            r"D:\downloads\a.kdimg"
+        );
     }
 
     #[test]

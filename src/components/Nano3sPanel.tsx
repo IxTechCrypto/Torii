@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
 import { inspectNano3sImage, listK230BurnDevices, nano3sDefaultImage } from "../api";
 import { formatKdimgSummary, type K230BurnDevice, type KdimgInfo, type Nano3sImageRole } from "../types";
 
 interface Props {
   onReady: (info: KdimgInfo, role: Nano3sImageRole) => void;
+}
+
+// Windows' "Copy as path" wraps the path in double quotes.
+function cleanPath(path: string): string {
+  return path.trim().replace(/^"(.*)"$/, "$1").trim();
 }
 
 // Avalon Nano 3S (Canaan K230) flash setup: pick the action, put the device
@@ -47,12 +53,25 @@ export default function Nano3sPanel({ onReady }: Props) {
     }
   }
 
+  async function browse() {
+    const picked = await open({
+      multiple: false,
+      directory: false,
+      filters: [{ name: "K230 image", extensions: ["kdimg"] }],
+    });
+    if (typeof picked === "string") {
+      setPathEdited(true);
+      setImagePath(picked);
+      setInfo(null);
+    }
+  }
+
   async function checkImage() {
     setChecking(true);
     setError(null);
     setInfo(null);
     try {
-      setInfo(await inspectNano3sImage(imagePath.trim(), role));
+      setInfo(await inspectNano3sImage(cleanPath(imagePath), role));
     } catch (e) {
       setError(String(e));
     } finally {
@@ -136,7 +155,10 @@ export default function Nano3sPanel({ onReady }: Props) {
             </small>
           </label>
           <div className="scan-controls">
-            <button type="button" onClick={checkImage} disabled={checking || imagePath.trim() === ""}>
+            <button type="button" onClick={browse}>
+              Browse...
+            </button>
+            <button type="button" onClick={checkImage} disabled={checking || cleanPath(imagePath) === ""}>
               {checking ? "Checking image..." : "Check image"}
             </button>
           </div>
