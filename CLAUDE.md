@@ -6,6 +6,7 @@ network, and the Avalon Nano 3S over K230 USB burn mode.
 
 - Current hardware work and next steps: `docs/nano3s-status.md`. Read it first.
 - Nano 3S image builds: `tools/nano3s-image/`.
+- Mujina PR #76, branch cleanup, S19j Pro / S21e Hydro plans: `docs/other-work.md`.
 - Older build notes: `STATUS.md` (2026-07, Antminer flow).
 
 ## Working rules
