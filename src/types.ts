@@ -116,3 +116,57 @@ export function formatUsbDeviceSummary(d: UsbDeviceRecord): string {
     ...note,
   ].join("\n");
 }
+
+// Mirrors commands::nano3s::Nano3sImageRole (`#[serde(rename_all = "kebab-case")]`).
+// "mujina" installs nano-mujina; "stock" restores Canaan's stock firmware.
+export type Nano3sImageRole = "mujina" | "stock";
+
+// Mirrors commands::nano3s::K230BurnDevice: a K230 boot ROM in USB burn
+// mode (VID 29f1 / PID 0230).
+export interface K230BurnDevice {
+  bus_id: string;
+  address: number;
+  product: string | null;
+}
+
+export interface KdimgPart {
+  name: string;
+  offset: number;
+  size: number;
+  content_size: number;
+}
+
+// Mirrors commands::nano3s::KdimgInfo. `problems` block the flash;
+// `warnings` need the user's explicit acknowledgement.
+export interface KdimgInfo {
+  path: string;
+  file_size: number;
+  sha256: string;
+  header_version: number;
+  image_info: string;
+  chip_info: string;
+  board_info: string;
+  parts: KdimgPart[];
+  known: { label: string; role: Nano3sImageRole } | null;
+  problems: string[];
+  warnings: string[];
+}
+
+// nano-mujina serves its API on port 80 rather than mujina's default 7785.
+export const NANO_MUJINA_API_PORT = 80;
+
+export function formatKdimgSummary(info: KdimgInfo): string {
+  const mib = (n: number) => `${(n / (1024 * 1024)).toFixed(1)} MiB`;
+  return [
+    `Image: ${info.path}`,
+    `Size: ${mib(info.file_size)}`,
+    `SHA-256: ${info.sha256}`,
+    `Verified image: ${info.known ? info.known.label : "no (not in Torii's list)"}`,
+    `Header: v${info.header_version} · image "${info.image_info}" · chip "${info.chip_info}" · board "${info.board_info}"`,
+    "",
+    "Partitions (all SHA-256 checked):",
+    ...info.parts.map(
+      (p) => `  ${p.name.padEnd(14)} @ 0x${p.offset.toString(16).padStart(8, "0")}  ${mib(p.content_size)}`,
+    ),
+  ].join("\n");
+}

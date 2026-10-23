@@ -3,6 +3,9 @@ mod external;
 
 use commands::bitaxe_flash::flash_bitaxe_raw;
 use commands::install::{install, preview};
+use commands::nano3s::{
+    flash_nano3s, inspect_nano3s_image, list_k230_burn_devices, nano3s_default_image,
+};
 use commands::scan::scan;
 use commands::telemetry::poll_miner;
 use commands::usb::{list_usb_devices, peek_usb_serial};
@@ -18,7 +21,11 @@ pub fn run() {
             poll_miner,
             list_usb_devices,
             peek_usb_serial,
-            flash_bitaxe_raw
+            flash_bitaxe_raw,
+            list_k230_burn_devices,
+            inspect_nano3s_image,
+            nano3s_default_image,
+            flash_nano3s
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

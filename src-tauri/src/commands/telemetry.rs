@@ -1,18 +1,21 @@
 //! `poll_miner` command: fetches the raw Mujina state tree from
-//! `http://{ip}:7785/api/v0/miner`. Signature is the handoff contract; do
-//! not change it. Parsing into `MinerStats` happens in the frontend
-//! (`src/telemetry.ts`) — this command is a thin fetch+validate.
+//! `http://{ip}:{port}/api/v0/miner`, port 7785 unless given (nano-mujina on
+//! a Nano 3S serves its API on port 80). Signature is the handoff contract;
+//! `port` is optional so existing callers keep working. Parsing into
+//! `MinerStats` happens in the frontend (`src/telemetry.ts`) — this command
+//! is a thin fetch+validate.
 
 use std::time::Duration;
 
 #[tauri::command]
-pub async fn poll_miner(ip: String) -> Result<serde_json::Value, String> {
+pub async fn poll_miner(ip: String, port: Option<u16>) -> Result<serde_json::Value, String> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(2))
         .build()
         .map_err(|e| format!("failed to build http client: {e}"))?;
 
-    let url = format!("http://{ip}:7785/api/v0/miner");
+    let port = port.unwrap_or(7785);
+    let url = format!("http://{ip}:{port}/api/v0/miner");
     let resp = client
         .get(&url)
         .send()

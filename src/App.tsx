@@ -7,16 +7,28 @@ import TelemetryView from "./components/TelemetryView";
 import BitaxeUsbTable from "./components/BitaxeUsbTable";
 import BitaxeFlashLog from "./components/BitaxeFlashLog";
 import FlashSuccessModal from "./components/FlashSuccessModal";
+import Nano3sPanel from "./components/Nano3sPanel";
+import Nano3sFlashLog from "./components/Nano3sFlashLog";
+import Nano3sFlashDoneModal from "./components/Nano3sFlashDoneModal";
 import { peekUsbSerial, preview } from "./api";
 import { detectAsic } from "./asic";
-import { formatUsbDeviceSummary, type HostRecord, type InstallConfig, type UsbDeviceRecord } from "./types";
+import {
+  formatKdimgSummary,
+  formatUsbDeviceSummary,
+  NANO_MUJINA_API_PORT,
+  type HostRecord,
+  type InstallConfig,
+  type KdimgInfo,
+  type Nano3sImageRole,
+  type UsbDeviceRecord,
+} from "./types";
 import "./styles.css";
 
-type Screen = "discovery" | "config" | "usb-confirm" | "deploying" | "telemetry";
+type Screen = "discovery" | "config" | "usb-confirm" | "nano3s-confirm" | "deploying" | "telemetry";
 
 function App() {
   const [screen, setScreen] = useState<Screen>("discovery");
-  const [discoveryMode, setDiscoveryMode] = useState<"lan" | "usb">("lan");
+  const [discoveryMode, setDiscoveryMode] = useState<"lan" | "usb" | "nano3s">("lan");
   const [selected, setSelected] = useState<{ record: HostRecord; scanFile: string } | null>(null);
   const [pendingConfig, setPendingConfig] = useState<InstallConfig | null>(null);
   const [previewText, setPreviewText] = useState<string | null>(null);
@@ -29,6 +41,15 @@ function App() {
   const [usbFlashPort, setUsbFlashPort] = useState<string | null>(null);
   const [selectedHardwareModel, setSelectedHardwareModel] = useState<"gamma" | "nerdqaxe-pp">("gamma");
   const [showFlashSuccessModal, setShowFlashSuccessModal] = useState(false);
+  const [telemetryPort, setTelemetryPort] = useState<number | undefined>(undefined);
+  const [nano3sPending, setNano3sPending] = useState<{ info: KdimgInfo; role: Nano3sImageRole } | null>(null);
+  const [nano3sWarningsAccepted, setNano3sWarningsAccepted] = useState(false);
+  const [nano3sFlash, setNano3sFlash] = useState<{
+    imagePath: string;
+    role: Nano3sImageRole;
+    acceptWarnings: boolean;
+  } | null>(null);
+  const [nano3sDoneRole, setNano3sDoneRole] = useState<Nano3sImageRole | null>(null);
 
   // Whenever a candidate device is up for confirmation, listen on its port
   // for a few seconds and capture whatever the firmware already running on
@@ -87,6 +108,7 @@ function App() {
   function handleInstallDone(exitCode: number) {
     if (exitCode === 0 && selected) {
       setTelemetryIp(selected.record.host);
+      setTelemetryPort(undefined);
       setScreen("telemetry");
     }
   }
@@ -116,6 +138,7 @@ function App() {
   function handleProceedToMonitor() {
     setShowFlashSuccessModal(false);
     setTelemetryIp("127.0.0.1");
+    setTelemetryPort(undefined);
     setScreen("telemetry");
   }
 
@@ -129,6 +152,43 @@ function App() {
     setScreen("discovery");
   }
 
+  function handleNano3sReady(info: KdimgInfo, role: Nano3sImageRole) {
+    setNano3sPending({ info, role });
+    setNano3sWarningsAccepted(false);
+    setScreen("nano3s-confirm");
+  }
+
+  function handleNano3sConfirm() {
+    if (!nano3sPending) return;
+    setNano3sFlash({
+      imagePath: nano3sPending.info.path,
+      role: nano3sPending.role,
+      acceptWarnings: nano3sWarningsAccepted,
+    });
+    setScreen("deploying");
+  }
+
+  function handleNano3sFlashDone(exitCode: number) {
+    if (exitCode === 0 && nano3sFlash) {
+      setNano3sDoneRole(nano3sFlash.role);
+    }
+  }
+
+  function handleNano3sMonitor(ip: string) {
+    setNano3sDoneRole(null);
+    setTelemetryIp(ip);
+    setTelemetryPort(NANO_MUJINA_API_PORT);
+    setScreen("telemetry");
+  }
+
+  function handleNano3sBack() {
+    setNano3sDoneRole(null);
+    setNano3sPending(null);
+    setNano3sFlash(null);
+    setDiscoveryMode("nano3s");
+    setScreen("discovery");
+  }
+
   // Determine current wizard step based on active screen
   const currentStep = (() => {
     switch (screen) {
@@ -136,6 +196,7 @@ function App() {
         return 1;
       case "config":
       case "usb-confirm":
+      case "nano3s-confirm":
         return 2;
       case "deploying":
         return 3;
@@ -159,6 +220,8 @@ function App() {
       setUsbConfirmPending(null);
       setInstallConfig(null);
       setUsbFlashPort(null);
+      setNano3sPending(null);
+      setNano3sFlash(null);
       setPreviewText(null);
       setScreen("discovery");
     } else if (stepId === 2) {
@@ -166,9 +229,11 @@ function App() {
         setScreen("config");
       } else if (usbConfirmPending) {
         setScreen("usb-confirm");
+      } else if (nano3sPending) {
+        setScreen("nano3s-confirm");
       }
     } else if (stepId === 3) {
-      if (installConfig || usbFlashPort) {
+      if (installConfig || usbFlashPort || nano3sFlash) {
         setScreen("deploying");
       }
     } else if (stepId === 4) {
@@ -262,13 +327,17 @@ function App() {
               >
                 USB Device Flash
               </button>
+              <button
+                className={`discovery-toggle-btn ${discoveryMode === "nano3s" ? "discovery-toggle-btn-active" : ""}`}
+                onClick={() => setDiscoveryMode("nano3s")}
+              >
+                Avalon Nano 3S
+              </button>
             </div>
 
-            {discoveryMode === "lan" ? (
-              <ScanTable onSelect={handleSelect} />
-            ) : (
-              <BitaxeUsbTable onSelect={handleUsbSelect} />
-            )}
+            {discoveryMode === "lan" && <ScanTable onSelect={handleSelect} />}
+            {discoveryMode === "usb" && <BitaxeUsbTable onSelect={handleUsbSelect} />}
+            {discoveryMode === "nano3s" && <Nano3sPanel onReady={handleNano3sReady} />}
           </div>
         )}
 
@@ -349,6 +418,40 @@ function App() {
           </ConfirmModal>
         )}
 
+        {screen === "nano3s-confirm" && nano3sPending && (
+          <ConfirmModal
+            isInline={true}
+            title={nano3sPending.role === "mujina" ? "Confirm nano-mujina install" : "Confirm stock firmware restore"}
+            warning="This rewrites the Nano 3S's whole SPI NAND over USB, replacing the firmware on both cores and its saved Wi-Fi and pool settings. A failed flash can be retried from burn mode."
+            actionLabel={nano3sPending.role === "mujina" ? "Flash nano-mujina" : "Flash stock firmware"}
+            confirmDisabled={nano3sPending.info.warnings.length > 0 && !nano3sWarningsAccepted}
+            previewText={formatKdimgSummary(nano3sPending.info)}
+            onConfirm={handleNano3sConfirm}
+            onCancel={() => {
+              setNano3sPending(null);
+              setScreen("discovery");
+            }}
+          >
+            {nano3sPending.info.warnings.length > 0 && (
+              <div style={{ margin: "1rem 0" }}>
+                {nano3sPending.info.warnings.map((w) => (
+                  <p key={w} className="confirm-modal-notice confirm-modal-notice-danger">
+                    {w}
+                  </p>
+                ))}
+                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={nano3sWarningsAccepted}
+                    onChange={(e) => setNano3sWarningsAccepted(e.target.checked)}
+                  />
+                  <span>I've checked the SHA-256 above against the image's source and want to flash it.</span>
+                </label>
+              </div>
+            )}
+          </ConfirmModal>
+        )}
+
         {screen === "deploying" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             {installConfig && (
@@ -363,11 +466,23 @@ function App() {
                 <BitaxeFlashLog port={usbFlashPort} model={selectedHardwareModel} onDone={handleUsbFlashDone} />
               </>
             )}
+            {nano3sFlash && (
+              <Nano3sFlashLog
+                imagePath={nano3sFlash.imagePath}
+                role={nano3sFlash.role}
+                acceptWarnings={nano3sFlash.acceptWarnings}
+                onDone={handleNano3sFlashDone}
+              />
+            )}
           </div>
         )}
 
         {screen === "telemetry" && telemetryIp && (
-          <TelemetryView ip={telemetryIp} />
+          <TelemetryView ip={telemetryIp} port={telemetryPort} />
+        )}
+
+        {nano3sDoneRole && (
+          <Nano3sFlashDoneModal role={nano3sDoneRole} onMonitor={handleNano3sMonitor} onBack={handleNano3sBack} />
         )}
 
         {showFlashSuccessModal && (

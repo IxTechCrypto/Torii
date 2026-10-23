@@ -35,6 +35,13 @@ Torii is a single guided wizard path from "unprovisioned hardware" to "mining un
 3. **Deploy** — Spawns `espflash` over USB with the native JTAG `--before usb-reset` configuration, streaming flash percentages live.
 4. **Telemetry** — Automatically configures telemetry monitoring to point to the local host (`127.0.0.1:7785`), where the resident `mujina-minerd` auto-detects and drives the newly flashed board.
 
+### C. USB Firmware Flash (Avalon Nano 3S)
+The Nano 3S's Canaan K230 has a USB burn mode in its boot ROM, so a flash can always be retried and stock firmware can always be restored.
+1. **Prepare** — Unplug the Wi-Fi module, connect a USB-A to USB-A cable, hold the recessed button and power on. On Windows, install the WinUSB driver for "K230 USB Boot Device" once with Zadig. Torii requires exactly one K230 in burn mode (USB `29f1:0230`).
+2. **Pick an action and image** — *Install Mujina* ([nano-mujina](https://github.com/aadhi1014/nano-mujina)) or *Restore Canaan stock firmware*. Torii checks the `.kdimg` the way `k230-flash` parses it (header magic and CRC32, partition-table CRC32, every partition's SHA-256), that it targets the K230 and fits the 256 MiB NAND, and its SHA-256 against a list of verified images. Images not on that list need an explicit acknowledgement.
+3. **Deploy** — Runs Kendryte's [`k230-flash`](https://github.com/kendryte/k230_flash_py) (`pip install k230-flash`) with `--media-type SPI_NAND`, streaming progress. Set `K230_FLASH` to use a specific executable.
+4. **After the flash** — Plug the Wi-Fi module back in, power on, and set up Wi-Fi from the Avalon Family app. For nano-mujina, Telemetry polls its API on port 80.
+
 ## How it works with Mujina
 
 Mujina is the mining stack that runs *on* the hardware. Torii is the tool that

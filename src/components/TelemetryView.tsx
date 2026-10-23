@@ -4,9 +4,10 @@ import { parseMujinaState, type MinerStats } from "../telemetry";
 
 interface Props {
   ip: string;
+  port?: number;
 }
 
-export default function TelemetryView({ ip }: Props) {
+export default function TelemetryView({ ip, port }: Props) {
   const [stats, setStats] = useState<MinerStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,7 +15,7 @@ export default function TelemetryView({ ip }: Props) {
     let cancelled = false;
 
     function poll() {
-      pollMiner(ip)
+      pollMiner(ip, port)
         .then((raw) => {
           if (cancelled) return;
           setStats(parseMujinaState(raw));
@@ -32,11 +33,11 @@ export default function TelemetryView({ ip }: Props) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [ip]);
+  }, [ip, port]);
 
   return (
     <div>
-      <h2>Telemetry: {ip}</h2>
+      <h2>Telemetry: {ip}{port !== undefined ? `:${port}` : ""}</h2>
       {error && <p className="telemetry-error">{error}</p>}
       {!stats && !error && <p>Waiting for first poll...</p>}
       {stats && (

@@ -4,7 +4,15 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { HostRecord, InstallConfig, ScanResult, UsbDeviceRecord } from "./types";
+import type {
+  HostRecord,
+  InstallConfig,
+  K230BurnDevice,
+  KdimgInfo,
+  Nano3sImageRole,
+  ScanResult,
+  UsbDeviceRecord,
+} from "./types";
 
 export function scan(cidr?: string, timeoutMs?: number): Promise<ScanResult> {
   return invoke("scan", { cidr, timeoutMs });
@@ -18,8 +26,8 @@ export function install(config: InstallConfig): Promise<number> {
   return invoke("install", { config });
 }
 
-export function pollMiner(ip: string): Promise<Record<string, unknown>> {
-  return invoke("poll_miner", { ip });
+export function pollMiner(ip: string, port?: number): Promise<Record<string, unknown>> {
+  return invoke("poll_miner", { ip, port });
 }
 
 // Event contract for the `install` command (Worker B emits these):
@@ -57,6 +65,38 @@ export function onBitaxeFlashLog(cb: (line: string) => void): Promise<UnlistenFn
 
 export function onBitaxeFlashDone(cb: (code: number) => void): Promise<UnlistenFn> {
   return listen<number>("bitaxe-flash://done", (event) => cb(event.payload));
+}
+
+export function listK230BurnDevices(): Promise<K230BurnDevice[]> {
+  return invoke("list_k230_burn_devices");
+}
+
+export function inspectNano3sImage(path: string, role: Nano3sImageRole): Promise<KdimgInfo> {
+  return invoke("inspect_nano3s_image", { path, role });
+}
+
+export function nano3sDefaultImage(role: Nano3sImageRole): Promise<string | null> {
+  return invoke("nano3s_default_image", { role });
+}
+
+export function flashNano3s(imagePath: string, role: Nano3sImageRole, acceptWarnings: boolean): Promise<number> {
+  return invoke("flash_nano3s", { imagePath, role, acceptWarnings });
+}
+
+// Event contract for the `flash_nano3s` command:
+//   "nano3s-flash://log"      — one event per line of k230-flash output
+//   "nano3s-flash://progress" — percent complete (0–100), in whole steps
+//   "nano3s-flash://done"     — emitted once, with the process exit code
+export function onNano3sFlashLog(cb: (line: string) => void): Promise<UnlistenFn> {
+  return listen<string>("nano3s-flash://log", (event) => cb(event.payload));
+}
+
+export function onNano3sFlashProgress(cb: (percent: number) => void): Promise<UnlistenFn> {
+  return listen<number>("nano3s-flash://progress", (event) => cb(event.payload));
+}
+
+export function onNano3sFlashDone(cb: (code: number) => void): Promise<UnlistenFn> {
+  return listen<number>("nano3s-flash://done", (event) => cb(event.payload));
 }
 
 export type { HostRecord };

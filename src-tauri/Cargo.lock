@@ -5377,12 +5377,14 @@ name = "torii"
 version = "0.1.0"
 dependencies = [
  "asic-rs",
+ "crc32fast",
  "futures",
  "nusb",
  "reqwest 0.12.28",
  "serde",
  "serde_json",
  "serialport",
+ "sha2",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
