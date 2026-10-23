@@ -66,6 +66,38 @@ class EraseRangeTest(unittest.TestCase):
         self.assertIsNone(wrapper.erase_range(0, 0x37000, 0, BLOCK))
         self.assertIsNone(wrapper.erase_range(0xC800000, 0x3800000, 0x3800000, BLOCK))
 
+    def test_unknown_medium_erase_size_is_an_error(self):
+        with self.assertRaises(RuntimeError):
+            wrapper.erase_range(0x1200000, 0x1000, 0x3000000, 0)
+
+
+class GuardTest(unittest.TestCase):
+    def test_rejects_k230_flash_before_1_3(self):
+        with self.assertRaises(SystemExit):
+            wrapper.check_k230_flash_version("1.2.0")
+        wrapper.check_k230_flash_version("1.3.0")
+        wrapper.check_k230_flash_version("1.4.0")
+
+    def test_fails_when_writes_bypass_the_hook(self):
+        # k230-flash 1.2.x wrote through write_image, never write_image_stream.
+        def old_write_kdimg(kdimg_path, burner, selected_partitions=None):
+            burner.write_image(b"", 0)
+
+        burner = FakeBurner()
+        burner.write_image = lambda data, offset: True
+        with self.assertRaises(RuntimeError):
+            wrapper.erasing_write_kdimg(old_write_kdimg)(Path(os.environ.get("TORII_TEST_KDIMG", SCRIPT)), burner)
+
+    def test_usb_errors_become_runtime_errors(self):
+        burner = FakeBurner()
+
+        def broken_write(ep, packet, timeout):
+            raise OSError("timeout")
+
+        burner.dev.write = broken_write
+        with self.assertRaises(RuntimeError):
+            wrapper.send_erase(burner, 0x1000000, BLOCK)
+
 
 @unittest.skipUnless(os.environ.get("TORII_TEST_KDIMG"), "set TORII_TEST_KDIMG to a real .kdimg")
 class RealImageTest(unittest.TestCase):

@@ -105,15 +105,70 @@ pub fn resolve_espflash() -> Result<String, String> {
     Err("espflash not found on PATH; install with `cargo install espflash --locked`".to_string())
 }
 
+/// Keep Windows from opening a console window for a helper process (Torii
+/// is a GUI app, so each spawned console program would otherwise flash one).
+pub fn hide_console(cmd: &mut std::process::Command) -> &mut std::process::Command {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    cmd
+}
+
+/// First match for `name` on PATH (`where` on Windows, `which` elsewhere).
+fn find_on_path(name: &str) -> Option<String> {
+    let finder = if cfg!(windows) { "where" } else { "which" };
+    let output = hide_console(std::process::Command::new(finder).arg(name))
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .next()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+/// Interpreters that may belong to a `k230-flash` launcher: the one named
+/// in its `#!` line (a Unix script's first line, or the shebang pip's
+/// Windows `.exe` launchers carry near their end), then `python` beside it
+/// (venv `Scripts\`/`bin/`) and one level up (conda env root).
+fn interpreters_for_cli(cli: &Path) -> Vec<String> {
+    let mut found = Vec::new();
+    if let Ok(bytes) = std::fs::read(cli) {
+        let text = String::from_utf8_lossy(&bytes);
+        for line in text.split("#!").skip(1) {
+            let interpreter = line.lines().next().unwrap_or("").trim().trim_matches('"');
+            // Split on both separators: a Windows launcher's path must be
+            // recognised whatever OS this runs on.
+            let file_name = interpreter.rsplit(['/', '\\']).next().unwrap_or("");
+            let is_python = file_name.to_ascii_lowercase().starts_with("python");
+            if is_python {
+                found.push(interpreter.to_string());
+            }
+        }
+    }
+    let exe = if cfg!(windows) { "python.exe" } else { "python" };
+    let dir = cli.parent();
+    for dir in [dir, dir.and_then(Path::parent)].into_iter().flatten() {
+        found.push(dir.join(exe).to_string_lossy().into_owned());
+    }
+    found
+}
+
 /// Resolve a Python that can import Kendryte's `k230_flash` package
 /// (`pip install k230-flash`), which Torii drives through its own wrapper
-/// script: `K230_PYTHON` if set; else the interpreter next to a `K230_FLASH`
-/// executable (`Scripts\k230-flash.exe` sits beside `python.exe` in a venv
-/// and one level below it in a conda env); else `python`/`python3` on PATH.
+/// script. Tried in order: `K230_PYTHON`; the interpreter behind
+/// `K230_FLASH`; the interpreter behind `k230-flash` on PATH (covers venv,
+/// conda and pipx installs); then `python`/`python3` on PATH.
 pub fn resolve_k230_python() -> Result<String, String> {
     let has_module = |python: &str| {
-        std::process::Command::new(python)
-            .args(["-c", "import k230_flash"])
+        hide_console(std::process::Command::new(python).args(["-c", "import k230_flash"]))
             .output()
             .is_ok_and(|o| o.status.success())
     };
@@ -122,12 +177,9 @@ pub fn resolve_k230_python() -> Result<String, String> {
     if let Ok(python) = std::env::var("K230_PYTHON") {
         candidates.push(python);
     }
-    if let Ok(cli) = std::env::var("K230_FLASH") {
-        let exe = if cfg!(windows) { "python.exe" } else { "python" };
-        let scripts_dir = Path::new(&cli).parent();
-        for dir in [scripts_dir, scripts_dir.and_then(Path::parent)].into_iter().flatten() {
-            candidates.push(dir.join(exe).to_string_lossy().into_owned());
-        }
+    let clis = std::env::var("K230_FLASH").ok().into_iter().chain(find_on_path("k230-flash"));
+    for cli in clis {
+        candidates.extend(interpreters_for_cli(Path::new(&cli)));
     }
     candidates.extend(["python".to_string(), "python3".to_string()]);
 
@@ -155,4 +207,30 @@ pub fn default_nano3s_image(role: crate::commands::nano3s::Nano3sImageRole) -> O
         .into_iter()
         .chain(std::iter::once(default.to_string()))
         .find(|p| Path::new(p).exists())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn finds_interpreter_from_launcher_shebang() {
+        let dir = std::env::temp_dir().join(format!("torii-cli-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        // A Unix console script, and bytes shaped like pip's Windows .exe
+        // launcher (binary stub, then the shebang, then a zip).
+        let script = dir.join("k230-flash");
+        std::fs::write(&script, "#!/opt/venv/bin/python3\nimport sys\n").unwrap();
+        let launcher = dir.join("k230-flash.exe");
+        let mut exe = vec![0x4d, 0x5a, 0x90, 0x00, 0xff];
+        exe.extend_from_slice(b"#!\"C:\\Users\\me\\pipx\\venvs\\k230-flash\\Scripts\\python.exe\"\r\nPK\x03\x04");
+        std::fs::write(&launcher, exe).unwrap();
+
+        assert_eq!(interpreters_for_cli(&script)[0], "/opt/venv/bin/python3");
+        assert_eq!(
+            interpreters_for_cli(&launcher)[0],
+            r"C:\Users\me\pipx\venvs\k230-flash\Scripts\python.exe"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

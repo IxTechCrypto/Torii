@@ -25,7 +25,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use sha2::{Digest, Sha256};
 use tauri::Emitter;
 
-use crate::external::{default_nano3s_image, resolve_k230_python};
+use crate::external::{default_nano3s_image, hide_console, resolve_k230_python};
 
 /// USB identity of the K230 boot ROM in burn mode (k230-flash README).
 const K230_BURN_VID: u16 = 0x29f1;
@@ -477,7 +477,8 @@ pub async fn flash_nano3s(
     let python = resolve_k230_python()?;
     let wrapper = write_flash_wrapper(&app)?;
     let mut cmd = Command::new(&python);
-    cmd.arg(&wrapper)
+    hide_console(&mut cmd)
+        .arg(&wrapper)
         .args(["--media-type", "SPI_NAND", "--log-level", "INFO"])
         .arg(&info.path)
         .env("PYTHONUNBUFFERED", "1")
