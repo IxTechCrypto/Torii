@@ -105,47 +105,40 @@ pub fn resolve_espflash() -> Result<String, String> {
     Err("espflash not found on PATH; install with `cargo install espflash --locked`".to_string())
 }
 
-/// First match for `name` on PATH (`where` on Windows, `which` elsewhere).
-fn find_on_path(name: &str) -> Option<String> {
-    let finder = if cfg!(windows) { "where" } else { "which" };
-    let output = std::process::Command::new(finder).arg(name).output().ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    String::from_utf8_lossy(&output.stdout)
-        .lines()
-        .next()
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-}
-
-/// Resolve Kendryte's `k230-flash` CLI (`pip install k230-flash`) as a
-/// program plus leading arguments: `K230_FLASH` if set, else `k230-flash` on
-/// PATH, else `python -m k230_flash`, which the k230-flash README documents
-/// as equivalent when pip didn't put the entry point on PATH.
-pub fn resolve_k230_flash() -> Result<(String, Vec<String>), String> {
-    if let Ok(path) = std::env::var("K230_FLASH") {
-        if Path::new(&path).exists() {
-            return Ok((path, Vec::new()));
-        }
-    }
-    if let Some(path) = find_on_path("k230-flash") {
-        return Ok((path, Vec::new()));
-    }
-    for python in ["python", "python3"] {
-        let has_module = std::process::Command::new(python)
+/// Resolve a Python that can import Kendryte's `k230_flash` package
+/// (`pip install k230-flash`), which Torii drives through its own wrapper
+/// script: `K230_PYTHON` if set; else the interpreter next to a `K230_FLASH`
+/// executable (`Scripts\k230-flash.exe` sits beside `python.exe` in a venv
+/// and one level below it in a conda env); else `python`/`python3` on PATH.
+pub fn resolve_k230_python() -> Result<String, String> {
+    let has_module = |python: &str| {
+        std::process::Command::new(python)
             .args(["-c", "import k230_flash"])
             .output()
-            .is_ok_and(|o| o.status.success());
-        if has_module {
-            return Ok((
-                python.to_string(),
-                vec!["-m".to_string(), "k230_flash".to_string()],
-            ));
+            .is_ok_and(|o| o.status.success())
+    };
+
+    let mut candidates: Vec<String> = Vec::new();
+    if let Ok(python) = std::env::var("K230_PYTHON") {
+        candidates.push(python);
+    }
+    if let Ok(cli) = std::env::var("K230_FLASH") {
+        let exe = if cfg!(windows) { "python.exe" } else { "python" };
+        let scripts_dir = Path::new(&cli).parent();
+        for dir in [scripts_dir, scripts_dir.and_then(Path::parent)].into_iter().flatten() {
+            candidates.push(dir.join(exe).to_string_lossy().into_owned());
         }
     }
-    Err("k230-flash not found; install it with `pip install k230-flash`".to_string())
+    candidates.extend(["python".to_string(), "python3".to_string()]);
+
+    candidates
+        .into_iter()
+        .find(|python| has_module(python))
+        .ok_or_else(|| {
+            "no Python with k230-flash found; install it with `pip install k230-flash`, or set \
+             K230_PYTHON to the python that has it"
+                .to_string()
+        })
 }
 
 /// Suggested `.kdimg` for a Nano 3S flash: `NANO3S_MUJINA_KDIMG` /

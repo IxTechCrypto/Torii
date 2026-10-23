@@ -1,6 +1,7 @@
 //! Avalon Nano 3S (Canaan K230) USB flash flow: burns a full `.kdimg`
-//! system image onto the device's SPI NAND with Kendryte's official
-//! `k230-flash` CLI. The same path installs nano-mujina or restores Canaan's
+//! system image onto the device's SPI NAND with Kendryte's `k230-flash`,
+//! run through a wrapper that first erases each partition's spare erase
+//! region the way Canaan's own burning tool does. The same path installs nano-mujina or restores Canaan's
 //! stock image, so rollback is just a flash of the stock image.
 //!
 //! The K230 boot ROM's USB burn mode (VID `29f1`, PID `0230`, entered by
@@ -24,7 +25,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use sha2::{Digest, Sha256};
 use tauri::Emitter;
 
-use crate::external::{default_nano3s_image, resolve_k230_flash};
+use crate::external::{default_nano3s_image, resolve_k230_python};
 
 /// USB identity of the K230 boot ROM in burn mode (k230-flash README).
 const K230_BURN_VID: u16 = 0x29f1;
@@ -415,6 +416,25 @@ fn for_each_line(reader: impl Read, mut on_line: impl FnMut(String)) -> std::io:
     Ok(())
 }
 
+/// k230-flash plus the erase-before-write step Canaan's own burning tool
+/// performs and k230-flash omits.
+const FLASH_WRAPPER: &str = include_str!("../../resources/k230_flash_erase.py");
+
+/// Write the wrapper script to the app cache dir and return its path.
+fn write_flash_wrapper(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    use tauri::Manager;
+    let dir = app
+        .path()
+        .app_cache_dir()
+        .map_err(|e| format!("could not resolve app cache dir: {e}"))?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("could not create {}: {e}", dir.display()))?;
+    let path = dir.join("k230_flash_erase.py");
+    std::fs::write(&path, FLASH_WRAPPER)
+        .map_err(|e| format!("could not write {}: {e}", path.display()))?;
+    Ok(path)
+}
+
 #[tauri::command]
 pub async fn flash_nano3s(
     app: tauri::AppHandle,
@@ -452,9 +472,12 @@ pub async fn flash_nano3s(
         }
     }
 
-    let (program, prefix_args) = resolve_k230_flash()?;
-    let mut cmd = Command::new(&program);
-    cmd.args(&prefix_args)
+    // Run k230-flash through Torii's wrapper, which adds the erase step
+    // k230-flash skips (see resources/k230_flash_erase.py).
+    let python = resolve_k230_python()?;
+    let wrapper = write_flash_wrapper(&app)?;
+    let mut cmd = Command::new(&python);
+    cmd.arg(&wrapper)
         .args(["--media-type", "SPI_NAND", "--log-level", "INFO"])
         .arg(&info.path)
         .env("PYTHONUNBUFFERED", "1")
@@ -463,7 +486,7 @@ pub async fn flash_nano3s(
         .stderr(Stdio::piped());
     let mut child = cmd
         .spawn()
-        .map_err(|e| format!("failed to spawn {program}: {e}"))?;
+        .map_err(|e| format!("failed to spawn {python}: {e}"))?;
 
     // k230-flash logs through loguru on stderr. Drain it on its own thread so
     // a full pipe can't stall the progress reader below.
