@@ -5,6 +5,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
+  BundleInfo,
   HostRecord,
   InstallConfig,
   K230BurnDevice,
@@ -81,6 +82,15 @@ export function nano3sDefaultImage(role: Nano3sImageRole): Promise<string | null
 
 export function flashNano3s(imagePath: string, role: Nano3sImageRole, acceptWarnings: boolean): Promise<number> {
   return invoke("flash_nano3s", { imagePath, role, acceptWarnings });
+}
+
+export function inspectNano3sBundle(path: string): Promise<BundleInfo> {
+  return invoke("inspect_nano3s_bundle", { path });
+}
+
+// Resolves with the device's own message; the device is rebooting by then.
+export function updateNano3sBundle(ip: string, path: string, acceptWarnings: boolean): Promise<string> {
+  return invoke("update_nano3s_bundle", { ip, path, acceptWarnings });
 }
 
 // Event contract for the `flash_nano3s` command:

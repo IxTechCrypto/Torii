@@ -152,6 +152,20 @@ export interface KdimgInfo {
   warnings: string[];
 }
 
+// Mirrors commands::nano3s_update::BundleInfo: a nano-mujina MJBUNDL1
+// network-update bundle. `problems` block the upload; `warnings` need the
+// user's explicit acknowledgement.
+export interface BundleInfo {
+  path: string;
+  file_size: number;
+  sha256: string;
+  minerd_bytes: number;
+  harness_bytes: number;
+  known: string | null;
+  problems: string[];
+  warnings: string[];
+}
+
 // nano-mujina serves its API on port 80 rather than mujina's default 7785.
 export const NANO_MUJINA_API_PORT = 80;
 

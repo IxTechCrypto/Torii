@@ -14,13 +14,28 @@
   so a 4028 answer means stock firmware and a 7785 scan finds neither unit.
   Its 25061101 is newer than the rollback image Torii knows
   (25012001_85ce93f).
-- **Pool isn't set.** The boot script's pool user is the placeholder
-  `YOUR_WALLET.YOUR_WORKER` on `stratum+tcp://pool.256foundation.org:3333`.
-  Set it at `http://<ip>/pool`. It's saved to `/data/userconfig/pool.conf`,
-  overrides the boot script, and takes effect after a restart (no hot reload).
+  MACs tell them apart: nano-mujina unit `e0:e1:a9:3f:1e:35`, stock unit
+  `40:a5:ef:72:55:7b` (ARP table, 2026-10-23).
+- **Pool is set** to `stratum+tcp://parasite.wtf:42069` (seen in
+  `/api/v0/miner` `sources`, 2026-10-23). The boot script's default is the
+  placeholder `YOUR_WALLET.YOUR_WORKER` on
+  `stratum+tcp://pool.256foundation.org:3333`; `http://<ip>/pool` saves to
+  `/data/userconfig/pool.conf`, overrides the boot script, and takes effect
+  after a restart (no hot reload).
 - Power target is aadhi's `MUJINA_NANO3S_POWER_TARGET_W=62.0` (stock
   baseline: 5.8 TH/s at 93 W, firmware 25011701_85ce93f).
-- No baseline hashrate or wall power on nano-mujina recorded yet.
+- **First nano-mujina reading** (2026-10-23 23:20 UTC, 22 min uptime):
+  3.51 TH/s (`ghsmm` 3510; `ghsspd` 3428), 605 shares accepted, 0 rejected,
+  `err_crc` 0. Board input from the INA sensor: 27.74 V x 2.13 A = 59.2 W,
+  so about 16.9 J/TH before PSU losses. ASICs 46.8–51.2 °C, fan 2430 rpm at 35%.
+  All 12 chips at PLL 210/231/250/270 MHz, 294–301 mV each. Wall power not
+  measured yet.
+- Raw responses: `docs/nano3s-api-samples/` (`api_v0_miner.json`,
+  `api_v0_boards.json`, `nano3s-detail.json`, same 2026-10-23 capture).
+  Caveat for Option C: in `/api/v0/miner` and `/api/v0/boards`, the `core`
+  power entry's `voltage_v` (3.626) is the commanded rail setting
+  (`voltage_mv_commanded`), while `current_a` and `power_w` come from the
+  INA sensor at the ~27.7 V input, so voltage x current doesn't equal power.
 
 ## nano-mujina on the device
 
@@ -49,14 +64,29 @@
   There's no backup of the originals (Torii didn't read flash before
   writing). Impact unknown: stock firmware may use them, nano-mujina may not.
 - aadhi's latest release, alpha-v4 (Sept 17), is only an update bundle
-  (`nano-mujina-alpha-v4-bundle.bin`, uploaded on the device's `/firmware`
-  page); alpha-v3 is the last full `.kdimg`. Not applied here yet.
+  (`nano-mujina-alpha-v4-bundle.bin`, SHA-256 `17977de4…4fcb`,
+  mujina-minerd only), POSTed to `/api/v0/firmware/bundle`; alpha-v3 is the
+  last full `.kdimg`. **Applied 2026-10-23 ~21:10 local through Torii's
+  network-update panel**; the device came back in ~10 s with `/tuning`
+  and the `psu` / `autotune-hashrate` endpoints, pool kept, all 12 chips on
+  IPC, 76 shares accepted / 0 rejected in the first 30 s. PSU detected:
+  27.77 V, 140 W ceiling (137 W effective). The device has the
+  endpoint (its `/api/v0/openapi.json`). It overwrites `/data/mujina-minerd`
+  and keeps no backup, so the rollback is a bundle of the current binary:
+  `mujina-minerd` extracted from wififix3's `data` partition (SHA-256
+  `c62ca2aa…dd03`), packed with aadhi's `pack_firmware_bundle.py`
+  (`b86bce8f…8741`). Rebuild it the same way; it isn't committed (19 MB).
+- Torii now does network updates: `src-tauri/src/commands/nano3s_update.rs`
+  (same checks as the device, known-bundle hashes, confirms the target
+  reports a Nano3s board) and `src/components/Nano3sUpdatePanel.tsx`.
+  Used for the v4 update above.
+- Dashboard comparison with the owner's: `docs/dashboard-diff.md`.
 
 ## Next
 
-1. Set the pool, then record hashrate and wall power after ~10 min.
-2. Capture real `/api/v0/miner`, `/api/v0/boards` and `/nano3s-detail`
-   responses from the device. They define the data shape for step 3.
+1. Measure wall power (pool set, hashrate recorded above).
+2. ~~Capture real API responses~~ done: `docs/nano3s-api-samples/`. They
+   define the data shape for step 3.
 3. **Option C** (the owner's choice over A and B below): Nano 3S support in
    IxTechCrypto/mujina `main`, so one codebase runs the owner's autotuner,
    API and dashboard on Bitaxe, NerdQAxe++ and Nano 3S.
@@ -64,6 +94,16 @@
    - add wififix3 (`9b2cfea5…4f40`) to `KNOWN_IMAGES` in
      `src-tauri/src/commands/nano3s.rs`, so Torii shows it as verified;
    - back up the `data` partition over USB before any flash;
+   - let the user enter Wi-Fi SSID and password before flashing, so the
+     device joins on first boot without BLE setup (the iOS network list
+     comes back empty). Baking it into the image (`build_image.sh`) needs
+     Linux `genimage`. Better: after flashing, Torii acts as the BLE central
+     and sends nano-mujina's `setssid,<hex_ssid>,<hex_pass>,<hex_id>,<auth>$$$$`
+     to characteristic FFE2 (service 0xFFFF); `ble_setup` writes
+     `wpa_supplicant.conf` itself (`mujina-miner/src/bin/ble_setup.rs`
+     ~659-751). Only the scan is broken on iOS, not `setssid`. Needs
+     `btleplug` and a BLE adapter; check the `auth` values and whether a
+     hashed PSK is accepted before building it;
    - warn when an image writes `data`, and when it carries another unit's
      factory files.
 5. Needs the owner's OK first: report the k230-flash erase bug to

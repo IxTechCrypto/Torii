@@ -1,0 +1,297 @@
+{
+    "asics_total": 12,
+    "best_share_diff": 853151.203628,
+    "chips": [
+        {
+            "chip": 0,
+            "ghsspd": 294.2312927246094,
+            "nonce_data": 60,
+            "nonce_heartbeat": 49553,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                28,
+                23,
+                46,
+                55
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 1.9510139226913452,
+            "temp_c": 48.17621994018555,
+            "volt_mv": 299.94140625
+        },
+        {
+            "chip": 1,
+            "ghsspd": 290.1585998535156,
+            "nonce_data": 76,
+            "nonce_heartbeat": 49537,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                26,
+                28,
+                63,
+                35
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 1.929088830947876,
+            "temp_c": 50.401981353759766,
+            "volt_mv": 296.44744873046875
+        },
+        {
+            "chip": 2,
+            "ghsspd": 291.71942138671875,
+            "nonce_data": 57,
+            "nonce_heartbeat": 49556,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                29,
+                32,
+                42,
+                49
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 1.8538343906402588,
+            "temp_c": 51.235294342041016,
+            "volt_mv": 296.7386169433594
+        },
+        {
+            "chip": 3,
+            "ghsspd": 285.2459411621094,
+            "nonce_data": 43,
+            "nonce_heartbeat": 49570,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                30,
+                42,
+                55,
+                25
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 2.362506866455078,
+            "temp_c": 48.17621994018555,
+            "volt_mv": 299.6502380371094
+        },
+        {
+            "chip": 4,
+            "ghsspd": 288.67431640625,
+            "nonce_data": 63,
+            "nonce_heartbeat": 49550,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                37,
+                27,
+                38,
+                50
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 2.049889087677002,
+            "temp_c": 49.28976821899414,
+            "volt_mv": 297.3209228515625
+        },
+        {
+            "chip": 5,
+            "ghsspd": 275.3105773925781,
+            "nonce_data": 39,
+            "nonce_heartbeat": 49574,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                52,
+                36,
+                47,
+                17
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 3.2626519203186035,
+            "temp_c": 47.0612907409668,
+            "volt_mv": 299.06793212890625
+        },
+        {
+            "chip": 6,
+            "ghsspd": 291.135986328125,
+            "nonce_data": 54,
+            "nonce_heartbeat": 49559,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                34,
+                20,
+                53,
+                45
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 1.883898138999939,
+            "temp_c": 50.957603454589844,
+            "volt_mv": 298.7767639160156
+        },
+        {
+            "chip": 7,
+            "ghsspd": 278.2430725097656,
+            "nonce_data": 32,
+            "nonce_heartbeat": 49581,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                40,
+                44,
+                57,
+                11
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 2.7184386253356934,
+            "temp_c": 47.897621154785156,
+            "volt_mv": 300.52374267578125
+        },
+        {
+            "chip": 8,
+            "ghsspd": 279.89093017578125,
+            "nonce_data": 33,
+            "nonce_heartbeat": 49580,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                34,
+                45,
+                60,
+                13
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 2.490004301071167,
+            "temp_c": 50.12405014038086,
+            "volt_mv": 297.3209228515625
+        },
+        {
+            "chip": 9,
+            "ghsspd": 277.7978820800781,
+            "nonce_data": 41,
+            "nonce_heartbeat": 49572,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                53,
+                22,
+                58,
+                19
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 2.873739719390869,
+            "temp_c": 49.56794357299805,
+            "volt_mv": 298.1944274902344
+        },
+        {
+            "chip": 10,
+            "ghsspd": 287.8394775390625,
+            "nonce_data": 54,
+            "nonce_heartbeat": 49559,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                34,
+                26,
+                60,
+                32
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 1.917213797569275,
+            "temp_c": 49.846038818359375,
+            "volt_mv": 296.1562805175781
+        },
+        {
+            "chip": 11,
+            "ghsspd": 287.97747802734375,
+            "nonce_data": 47,
+            "nonce_heartbeat": 49565,
+            "nonce_timeout": 0,
+            "pll_cnt": [
+                32,
+                33,
+                51,
+                36
+            ],
+            "pll_freq": [
+                210,
+                231,
+                250,
+                270
+            ],
+            "spd_dh": 2.167017936706543,
+            "temp_c": 46.7823371887207,
+            "volt_mv": 294.4093017578125
+        }
+    ],
+    "difficulty": 2408.0,
+    "err_crc": 0,
+    "ghsmm": 3510,
+    "ghsspd": 3428,
+    "ina_bus_v": 27.7425,
+    "ina_current_a": 2.133,
+    "ina_power_w": 59.1747525,
+    "ipc_connected": true,
+    "job_id": 133,
+    "nonce_bad_len": 0,
+    "nonce_overflow": 0,
+    "nonce_read_err": 0,
+    "paused": false,
+    "pll_freq_commanded": [
+        210,
+        230,
+        250,
+        270
+    ],
+    "regread_err": 0,
+    "shares_accepted": 605,
+    "shares_found": 605,
+    "shares_rejected": 0,
+    "spd_dh": 2.2814178466796875,
+    "temp_avg": 49.126365661621094,
+    "temp_max": 51.235294342041016,
+    "voltage_mv_commanded": 3626
+}

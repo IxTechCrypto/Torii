@@ -1,0 +1,53 @@
+{
+    "uptime_secs": 1330,
+    "hashrate": 3510000000000,
+    "shares_submitted": 602,
+    "paused": false,
+    "boards": [
+        {
+            "name": "nano3s-0",
+            "model": "Avalon Nano3s (A3197S x12)",
+            "serial": "nano3s-0",
+            "fans": [
+                {
+                    "name": "fan0",
+                    "rpm": 2430,
+                    "percent": 35,
+                    "target_percent": null
+                }
+            ],
+            "temperatures": [
+                {
+                    "name": "asic",
+                    "temperature_c": 49.126366
+                },
+                {
+                    "name": "outlet",
+                    "temperature_c": 50.0
+                }
+            ],
+            "powers": [
+                {
+                    "name": "core",
+                    "voltage_v": 3.626,
+                    "current_a": 2.11975,
+                    "power_w": 58.804516
+                }
+            ],
+            "threads": [
+                {
+                    "name": "chain",
+                    "hashrate": 3510000000000,
+                    "is_active": true
+                }
+            ]
+        }
+    ],
+    "sources": [
+        {
+            "name": "parasite.wtf:42069",
+            "url": "stratum+tcp://parasite.wtf:42069",
+            "difficulty": 2408
+        }
+    ]
+}
