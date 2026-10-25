@@ -17,6 +17,8 @@
 
 use std::path::Path;
 use std::time::Duration;
+use reqwest::header::{HeaderValue, AUTHORIZATION};
+use reqwest::StatusCode;
 
 use sha2::{Digest, Sha256};
 
@@ -195,6 +197,17 @@ pub(crate) fn auth_header(token: Option<&str>) -> Option<String> {
     }
 }
 
+/// Maps response status to an error string, or None if successful.
+pub(crate) fn upload_error(status: StatusCode, body: &str) -> Option<String> {
+    if status == StatusCode::UNAUTHORIZED {
+        Some("the device requires an API token (HTTP 401): enter it in the API token field and try again".to_string())
+    } else if !status.is_success() {
+        Some(format!("device rejected the bundle (HTTP {status}): {body}"))
+    } else {
+        None
+    }
+}
+
 /// Uploads the bundle at `path` to the nano-mujina device at `ip`. The device
 /// reboots on success; the returned string is its own `detail` message.
 #[tauri::command]
@@ -225,7 +238,11 @@ pub async fn update_nano3s_bundle(
         // ~19 MB over the device's Wi-Fi, plus staging to NAND.
         .timeout(Duration::from_secs(180));
     if let Some(auth) = auth_header(token.as_deref()) {
-        req = req.header("Authorization", auth);
+        let mut val = HeaderValue::from_str(&auth).map_err(|_| {
+            "the API token contains characters that can't go in an HTTP header".to_string()
+        })?;
+        val.set_sensitive(true);
+        req = req.header(AUTHORIZATION, val);
     }
     let resp = req
         .send()
@@ -233,11 +250,8 @@ pub async fn update_nano3s_bundle(
         .map_err(|e| format!("upload to {url} failed: {e}"))?;
     let status = resp.status();
     let text = resp.text().await.unwrap_or_default();
-    if status == reqwest::StatusCode::UNAUTHORIZED {
-        return Err("the device requires an API token (HTTP 401): enter it in the API token field and try again".to_string());
-    }
-    if !status.is_success() {
-        return Err(format!("device rejected the bundle (HTTP {status}): {text}"));
+    if let Some(err) = upload_error(status, &text) {
+        return Err(err);
     }
     let detail = serde_json::from_str::<serde_json::Value>(&text)
         .ok()
@@ -257,6 +271,17 @@ mod tests {
         assert_eq!(auth_header(Some("   ")), None);
         assert_eq!(auth_header(Some(" abc ")), Some("Bearer abc".to_string()));
         assert_eq!(auth_header(Some("secret123")), Some("Bearer secret123".to_string()));
+    }
+
+    #[test]
+    fn upload_error_mapping() {
+        assert_eq!(upload_error(StatusCode::OK, "ok"), None);
+        let err401 = upload_error(StatusCode::UNAUTHORIZED, "API token required").unwrap();
+        assert!(err401.contains("HTTP 401"));
+        assert!(!err401.contains("API token required"));
+        let err500 = upload_error(StatusCode::INTERNAL_SERVER_ERROR, "failed to unpack").unwrap();
+        assert!(err500.contains("HTTP 500"));
+        assert!(err500.contains("failed to unpack"));
     }
 
     fn elf(len: usize, nano3s: bool) -> Vec<u8> {

@@ -95,7 +95,14 @@ export default function Nano3sUpdatePanel() {
         </label>
         <label>
           Device IP
-          <input value={ip} onChange={(e) => setIp(e.target.value)} placeholder="e.g. 192.168.4.61" />
+          <input
+            value={ip}
+            onChange={(e) => {
+              setIp(e.target.value);
+              setToken("");
+            }}
+            placeholder="e.g. 192.168.4.61"
+          />
         </label>
         <label>
           API token
