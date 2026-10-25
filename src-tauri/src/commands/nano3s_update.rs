@@ -187,6 +187,14 @@ async fn check_device(client: &reqwest::Client, ip: &str) -> Result<(), String> 
     Ok(())
 }
 
+/// Returns the Authorization header value if a non-empty token is provided.
+pub(crate) fn auth_header(token: Option<&str>) -> Option<String> {
+    match token.map(str::trim) {
+        Some(t) if !t.is_empty() => Some(format!("Bearer {t}")),
+        _ => None,
+    }
+}
+
 /// Uploads the bundle at `path` to the nano-mujina device at `ip`. The device
 /// reboots on success; the returned string is its own `detail` message.
 #[tauri::command]
@@ -194,6 +202,7 @@ pub async fn update_nano3s_bundle(
     ip: String,
     path: String,
     accept_warnings: bool,
+    token: Option<String>,
 ) -> Result<String, String> {
     let (info, body) = tauri::async_runtime::spawn_blocking(move || inspect_bundle_file(&path))
         .await
@@ -209,17 +218,24 @@ pub async fn update_nano3s_bundle(
     check_device(&client, &ip).await?;
 
     let url = format!("http://{ip}:{NANO_MUJINA_PORT}/api/v0/firmware/bundle");
-    let resp = client
+    let mut req = client
         .post(&url)
         .header("Content-Type", "application/octet-stream")
         .body(body)
         // ~19 MB over the device's Wi-Fi, plus staging to NAND.
-        .timeout(Duration::from_secs(180))
+        .timeout(Duration::from_secs(180));
+    if let Some(auth) = auth_header(token.as_deref()) {
+        req = req.header("Authorization", auth);
+    }
+    let resp = req
         .send()
         .await
         .map_err(|e| format!("upload to {url} failed: {e}"))?;
     let status = resp.status();
     let text = resp.text().await.unwrap_or_default();
+    if status == reqwest::StatusCode::UNAUTHORIZED {
+        return Err("the device requires an API token (HTTP 401): enter it in the API token field and try again".to_string());
+    }
     if !status.is_success() {
         return Err(format!("device rejected the bundle (HTTP {status}): {text}"));
     }
@@ -233,6 +249,15 @@ pub async fn update_nano3s_bundle(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn auth_header_rules() {
+        assert_eq!(auth_header(None), None);
+        assert_eq!(auth_header(Some("")), None);
+        assert_eq!(auth_header(Some("   ")), None);
+        assert_eq!(auth_header(Some(" abc ")), Some("Bearer abc".to_string()));
+        assert_eq!(auth_header(Some("secret123")), Some("Bearer secret123".to_string()));
+    }
 
     fn elf(len: usize, nano3s: bool) -> Vec<u8> {
         let mut b = vec![0u8; len];

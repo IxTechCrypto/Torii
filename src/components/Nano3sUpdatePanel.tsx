@@ -27,6 +27,7 @@ function formatBundleSummary(info: BundleInfo): string {
 // backend repeats the bundle check and confirms the device before uploading.
 export default function Nano3sUpdatePanel() {
   const [ip, setIp] = useState("");
+  const [token, setToken] = useState("");
   const [bundlePath, setBundlePath] = useState("");
   const [info, setInfo] = useState<BundleInfo | null>(null);
   const [accepted, setAccepted] = useState(false);
@@ -70,7 +71,7 @@ export default function Nano3sUpdatePanel() {
     setBusy("uploading");
     setError(null);
     try {
-      setResult(await updateNano3sBundle(ip.trim(), info.path, info.warnings.length > 0));
+      setResult(await updateNano3sBundle(ip.trim(), info.path, info.warnings.length > 0, token.trim() || undefined));
     } catch (e) {
       setError(String(e));
     } finally {
@@ -95,6 +96,16 @@ export default function Nano3sUpdatePanel() {
         <label>
           Device IP
           <input value={ip} onChange={(e) => setIp(e.target.value)} placeholder="e.g. 192.168.4.61" />
+        </label>
+        <label>
+          API token
+          <input
+            type="password"
+            autoComplete="off"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder="optional — only if the device has one"
+          />
         </label>
         <label>
           Bundle (.bin)

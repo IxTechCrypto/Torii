@@ -89,8 +89,8 @@ export function inspectNano3sBundle(path: string): Promise<BundleInfo> {
 }
 
 // Resolves with the device's own message; the device is rebooting by then.
-export function updateNano3sBundle(ip: string, path: string, acceptWarnings: boolean): Promise<string> {
-  return invoke("update_nano3s_bundle", { ip, path, acceptWarnings });
+export function updateNano3sBundle(ip: string, path: string, acceptWarnings: boolean, token?: string): Promise<string> {
+  return invoke("update_nano3s_bundle", { ip, path, acceptWarnings, token });
 }
 
 // Event contract for the `flash_nano3s` command:
