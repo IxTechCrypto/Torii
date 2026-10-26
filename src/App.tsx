@@ -11,6 +11,8 @@ import Nano3sPanel from "./components/Nano3sPanel";
 import Nano3sUpdatePanel from "./components/Nano3sUpdatePanel";
 import Nano3sFlashLog from "./components/Nano3sFlashLog";
 import Nano3sFlashDoneModal from "./components/Nano3sFlashDoneModal";
+import HardwareArchetypeSelector, { type HardwareArchetype } from "./components/HardwareArchetypeSelector";
+import HandoffDashboardModal from "./components/HandoffDashboardModal";
 import { peekUsbSerial, preview } from "./api";
 import { detectAsic } from "./asic";
 import {
@@ -29,7 +31,9 @@ type Screen = "discovery" | "config" | "usb-confirm" | "nano3s-confirm" | "deplo
 
 function App() {
   const [screen, setScreen] = useState<Screen>("discovery");
-  const [discoveryMode, setDiscoveryMode] = useState<"lan" | "usb" | "nano3s">("lan");
+  const [archetype, setArchetype] = useState<HardwareArchetype>("network");
+  const [networkSubMode, setNetworkSubMode] = useState<"lan" | "nano3s">("nano3s");
+  const [discoveryMode, setDiscoveryMode] = useState<"lan" | "usb" | "nano3s">("nano3s");
   const [selected, setSelected] = useState<{ record: HostRecord; scanFile: string } | null>(null);
   const [pendingConfig, setPendingConfig] = useState<InstallConfig | null>(null);
   const [previewText, setPreviewText] = useState<string | null>(null);
@@ -51,6 +55,7 @@ function App() {
     acceptWarnings: boolean;
   } | null>(null);
   const [nano3sDoneRole, setNano3sDoneRole] = useState<Nano3sImageRole | null>(null);
+  const [lanHandoffHost, setLanHandoffHost] = useState<string | null>(null);
 
   // Whenever a candidate device is up for confirmation, listen on its port
   // for a few seconds and capture whatever the firmware already running on
@@ -108,9 +113,8 @@ function App() {
 
   function handleInstallDone(exitCode: number) {
     if (exitCode === 0 && selected) {
-      setTelemetryIp(selected.record.host);
-      setTelemetryPort(undefined);
-      setScreen("telemetry");
+      setLanHandoffHost(selected.record.host);
+      setInstallConfig(null);
     }
   }
 
@@ -315,26 +319,22 @@ function App() {
 
         {screen === "discovery" && (
           <div className="discovery-container">
-            <div className="discovery-toggle-group">
-              <button
-                className={`discovery-toggle-btn ${discoveryMode === "lan" ? "discovery-toggle-btn-active" : ""}`}
-                onClick={() => setDiscoveryMode("lan")}
-              >
-                LAN Miner Scan
-              </button>
-              <button
-                className={`discovery-toggle-btn ${discoveryMode === "usb" ? "discovery-toggle-btn-active" : ""}`}
-                onClick={() => setDiscoveryMode("usb")}
-              >
-                USB Device Flash
-              </button>
-              <button
-                className={`discovery-toggle-btn ${discoveryMode === "nano3s" ? "discovery-toggle-btn-active" : ""}`}
-                onClick={() => setDiscoveryMode("nano3s")}
-              >
-                Avalon Nano 3S
-              </button>
-            </div>
+            <HardwareArchetypeSelector
+              selected={archetype}
+              onSelect={(type) => {
+                setArchetype(type);
+                if (type === "network") {
+                  setDiscoveryMode(networkSubMode);
+                } else {
+                  setDiscoveryMode("usb");
+                }
+              }}
+              subMode={networkSubMode}
+              onSubModeSelect={(sub) => {
+                setNetworkSubMode(sub);
+                setDiscoveryMode(sub);
+              }}
+            />
 
             {discoveryMode === "lan" && <ScanTable onSelect={handleSelect} />}
             {discoveryMode === "usb" && <BitaxeUsbTable onSelect={handleUsbSelect} />}
@@ -489,6 +489,25 @@ function App() {
 
         {nano3sDoneRole && (
           <Nano3sFlashDoneModal role={nano3sDoneRole} onMonitor={handleNano3sMonitor} onBack={handleNano3sBack} />
+        )}
+
+        {lanHandoffHost && (
+          <HandoffDashboardModal
+            title="Mujina Installed on Miner"
+            subtitle={`Host IP: ${lanHandoffHost}`}
+            deviceType="network"
+            targetUrl={`http://${lanHandoffHost}`}
+            steps={[
+              { num: 1, heading: "Mining Daemon Auto-Started", desc: "mujina-minerd is actively running on the miner with the pool credentials provided." },
+              { num: 2, heading: "Embedded Web Dashboard Online", desc: "The miner is serving its cyberpunk dashboard and REST API directly on port 80." },
+              { num: 3, heading: "Torii Setup Complete", desc: "Torii's job is done. You can manage frequency, voltage, fan targets, and pools from the browser." }
+            ]}
+            onBack={() => {
+              setLanHandoffHost(null);
+              setSelected(null);
+              setScreen("discovery");
+            }}
+          />
         )}
 
         {showFlashSuccessModal && (
