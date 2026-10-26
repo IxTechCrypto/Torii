@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { install, onInstallDone, onInstallLog } from "../api";
+import LogActionBar from "./LogActionBar";
 import type { InstallConfig } from "../types";
 
 interface Props {
@@ -61,6 +62,7 @@ export default function InstallLog({ config, onDone }: Props) {
   return (
     <div>
       <h2>Installing on {config.host}</h2>
+      <LogActionBar logTitle={`install-${config.host}`} lines={lines} />
       <div className="install-log-frame">
         <pre ref={preRef} className="install-log">
           {lines.join("\n")}

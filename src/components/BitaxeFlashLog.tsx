@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { flashBitaxeRaw, onBitaxeFlashDone, onBitaxeFlashLog } from "../api";
+import LogActionBar from "./LogActionBar";
 
 interface Props {
   port: string;
@@ -63,6 +64,7 @@ export default function BitaxeFlashLog({ port, model, onDone }: Props) {
   return (
     <div>
       <h2>Flashing bitaxe-raw ({modelLabel}) onto {port}</h2>
+      <LogActionBar logTitle={`bitaxe-flash-${port.replace(/[^a-zA-Z0-9]/g, "-")}`} lines={lines} />
       <div className="install-log-frame">
         <pre ref={preRef} className="install-log">
           {lines.join("\n")}

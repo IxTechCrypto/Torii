@@ -1,3 +1,5 @@
+import { openUrl } from "@tauri-apps/plugin-opener";
+
 interface Props {
   model?: string;
   onProceedToMonitor: () => void;
@@ -10,6 +12,15 @@ export default function FlashSuccessModal({
   onBackToDevices,
 }: Props) {
   const modelName = model === "nerdqaxe-pp" ? "NerdQAxe++ (0xcaf1)" : "Bitaxe Gamma (0xcafe)";
+
+  async function handleOpenLocalDashboard() {
+    const url = "http://127.0.0.1:7785";
+    try {
+      await openUrl(url);
+    } catch {
+      window.open(url, "_blank", "noreferrer");
+    }
+  }
 
   return (
     <div className="confirm-modal-overlay">
@@ -53,9 +64,9 @@ export default function FlashSuccessModal({
               <div className="flash-step-item">
                 <div className="flash-step-num">3</div>
                 <div className="flash-step-content">
-                  <div className="flash-step-heading">Restart Mujina Miner</div>
+                  <div className="flash-step-heading">Restart Mujina Miner Host Daemon</div>
                   <div className="flash-step-desc">
-                    The mining daemon binds to USB hardware during initialization. Restart Mujina via the dashboard (<a href="http://127.0.0.1:8088" target="_blank" rel="noreferrer">http://127.0.0.1:8088</a> &rarr; <strong>Restart Mujina</strong>) or by running <code>start-mujina.ps1</code>.
+                    The local mining daemon binds to USB hardware during initialization. Restart Mujina via the dashboard (<a href="http://127.0.0.1:7785" target="_blank" rel="noreferrer">http://127.0.0.1:7785</a>) or by running <code>start-mujina.ps1</code>.
                   </div>
                 </div>
               </div>
@@ -64,11 +75,21 @@ export default function FlashSuccessModal({
 
           <div className="confirm-modal-actions flash-success-actions">
             <button type="button" className="flash-btn-secondary" onClick={onBackToDevices}>
-              Flash Another Board
+              ← Flash Another Board
             </button>
-            <button type="button" className="flash-btn-primary" onClick={onProceedToMonitor}>
-              Go to Fleet Monitor &rarr;
-            </button>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button type="button" className="flash-btn-secondary" onClick={onProceedToMonitor}>
+                Inline Monitor
+              </button>
+              <button
+                type="button"
+                className="flash-btn-primary"
+                onClick={handleOpenLocalDashboard}
+                style={{ background: "#ff2e97", color: "#fff", fontWeight: 700 }}
+              >
+                Open Host Dashboard ↗
+              </button>
+            </div>
           </div>
         </div>
       </div>

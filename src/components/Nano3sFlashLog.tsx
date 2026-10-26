@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { flashNano3s, onNano3sFlashDone, onNano3sFlashLog, onNano3sFlashProgress } from "../api";
+import LogActionBar from "./LogActionBar";
 import type { Nano3sImageRole } from "../types";
 
 interface Props {
@@ -80,6 +81,7 @@ export default function Nano3sFlashLog({ imagePath, role, acceptWarnings, onDone
           </span>
         </div>
       )}
+      <LogActionBar logTitle={`nano3s-flash-${role}`} lines={lines} />
       <div className="install-log-frame">
         <pre ref={preRef} className="install-log">
           {lines.join("\n")}

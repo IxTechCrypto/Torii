@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import type { Nano3sImageRole } from "../types";
 
 interface Props {
@@ -10,6 +11,17 @@ interface Props {
 export default function Nano3sFlashDoneModal({ role, onMonitor, onBack }: Props) {
   const [ip, setIp] = useState("");
   const isMujina = role === "mujina";
+
+  async function handleOpenWebDashboard() {
+    const trimmed = ip.trim();
+    if (!trimmed) return;
+    const url = `http://${trimmed}`;
+    try {
+      await openUrl(url);
+    } catch {
+      window.open(url, "_blank", "noreferrer");
+    }
+  }
 
   return (
     <div className="confirm-modal-overlay">
@@ -55,17 +67,28 @@ export default function Nano3sFlashDoneModal({ role, onMonitor, onBack }: Props)
 
           <div className="confirm-modal-actions flash-success-actions">
             <button type="button" className="flash-btn-secondary" onClick={onBack}>
-              Back to devices
+              ← Back to devices
             </button>
             {isMujina && (
-              <button
-                type="button"
-                className="flash-btn-primary"
-                disabled={ip.trim() === ""}
-                onClick={() => onMonitor(ip.trim())}
-              >
-                Open monitor &rarr;
-              </button>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  type="button"
+                  className="flash-btn-secondary"
+                  disabled={ip.trim() === ""}
+                  onClick={() => onMonitor(ip.trim())}
+                >
+                  Inline Monitor
+                </button>
+                <button
+                  type="button"
+                  className="flash-btn-primary"
+                  disabled={ip.trim() === ""}
+                  onClick={handleOpenWebDashboard}
+                  style={{ background: "#00f0ff", color: "#050811", fontWeight: 700 }}
+                >
+                  Open Web Dashboard ↗
+                </button>
+              </div>
             )}
           </div>
         </div>
