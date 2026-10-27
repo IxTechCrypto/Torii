@@ -7,8 +7,7 @@ import TelemetryView from "./components/TelemetryView";
 import BitaxeUsbTable from "./components/BitaxeUsbTable";
 import BitaxeFlashLog from "./components/BitaxeFlashLog";
 import FlashSuccessModal from "./components/FlashSuccessModal";
-import Nano3sPanel from "./components/Nano3sPanel";
-import Nano3sUpdatePanel from "./components/Nano3sUpdatePanel";
+import Nano3sTabs from "./components/Nano3sTabs";
 import Nano3sFlashLog from "./components/Nano3sFlashLog";
 import Nano3sFlashDoneModal from "./components/Nano3sFlashDoneModal";
 import HardwareArchetypeSelector, { type HardwareArchetype } from "./components/HardwareArchetypeSelector";
@@ -339,10 +338,7 @@ function App() {
             {discoveryMode === "lan" && <ScanTable onSelect={handleSelect} />}
             {discoveryMode === "usb" && <BitaxeUsbTable onSelect={handleUsbSelect} />}
             {discoveryMode === "nano3s" && (
-              <>
-                <Nano3sPanel onReady={handleNano3sReady} />
-                <Nano3sUpdatePanel />
-              </>
+              <Nano3sTabs onReady={handleNano3sReady} />
             )}
           </div>
         )}
