@@ -1,0 +1,2 @@
+[console_scripts]
+k230-flash = k230_flash.main:main

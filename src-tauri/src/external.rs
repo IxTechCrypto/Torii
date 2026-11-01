@@ -174,6 +174,20 @@ pub fn resolve_k230_python() -> Result<String, String> {
     };
 
     let mut candidates: Vec<String> = Vec::new();
+
+    // 1. Check for bundled/embedded Python (Windows and dev roots)
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            candidates.push(dir.join("resources").join("python-embed").join("python.exe").to_string_lossy().into_owned());
+            candidates.push(dir.join("python-embed").join("python.exe").to_string_lossy().into_owned());
+            candidates.push(dir.join("_up_").join("resources").join("python-embed").join("python.exe").to_string_lossy().into_owned());
+        }
+    }
+    candidates.push("src-tauri/resources/python-embed/python.exe".to_string());
+    candidates.push("resources/python-embed/python.exe".to_string());
+    candidates.push("../src-tauri/resources/python-embed/python.exe".to_string());
+
+    // 2. Explicit environment overrides
     if let Ok(python) = std::env::var("K230_PYTHON") {
         candidates.push(python);
     }
@@ -185,6 +199,7 @@ pub fn resolve_k230_python() -> Result<String, String> {
 
     candidates
         .into_iter()
+        .filter(|p| Path::new(p).exists() || !p.contains(std::path::MAIN_SEPARATOR))
         .find(|python| has_module(python))
         .ok_or_else(|| {
             "no Python with k230-flash found; install it with `pip install k230-flash`, or set \
