@@ -46,8 +46,7 @@ export default function ScanTable({ onSelect }: Props) {
       {records.length > 0 && (
         <>
         <p className="scan-hint">
-          Only stock Bitmain firmware can be installed onto. Other rows are shown for
-          visibility but greyed out and not selectable.
+          LAN scan for ASIC miners on your network. Firmware installation for Antminer S19 is currently paused pending official 256 Foundation image release.
         </p>
         <div className="scan-table-wrap">
           <div className="scan-table-ring" aria-hidden="true" />
@@ -59,7 +58,7 @@ export default function ScanTable({ onSelect }: Props) {
               <th>Firmware</th>
               <th>Control Board</th>
               <th>Chip</th>
-              <th>Ready</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -69,7 +68,7 @@ export default function ScanTable({ onSelect }: Props) {
                 <tr
                   key={r.host}
                   className={installable ? "row-installable" : "row-disabled"}
-                  title={installable ? undefined : "non-stock firmware, not installable"}
+                  title={installable ? undefined : "S19 installation paused pending 256 Foundation image release"}
                   onClick={() => {
                     if (installable && scanFile) onSelect(r, scanFile);
                   }}
@@ -79,7 +78,7 @@ export default function ScanTable({ onSelect }: Props) {
                   <td>{r.firmware}</td>
                   <td>{r.control_board}</td>
                   <td>{r.chip ?? "-"}</td>
-                  <td>{installable && r.install_hint.ready ? "yes" : "no"}</td>
+                  <td>{installable ? "ready" : "paused"}</td>
                 </tr>
               );
             })}

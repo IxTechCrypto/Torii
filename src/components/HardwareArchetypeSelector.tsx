@@ -37,7 +37,7 @@ export default function HardwareArchetypeSelector({
             <span style={{ fontSize: "0.75rem", color: "#8a9ba8", textTransform: "uppercase" }}>Standalone / Embedded</span>
           </div>
           <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", color: "#a0b0c0", lineHeight: 1.4 }}>
-            For standalone miners on your LAN (Avalon Nano 3S, Antminer S19j). Mines autonomously; web dashboard served directly on device IP.
+            For standalone miners on your LAN (Avalon Nano 3S USB flash &amp; OTA; Antminer S19 LAN discovery). Mines autonomously; web dashboard served directly on device IP.
           </p>
         </button>
 
@@ -81,7 +81,7 @@ export default function HardwareArchetypeSelector({
             className={`discovery-toggle-btn ${subMode === "lan" ? "discovery-toggle-btn-active" : ""}`}
             onClick={() => onSubModeSelect("lan")}
           >
-            Antminer / LAN Scan
+            Antminer / LAN Scan (Discovery Only)
           </button>
         </div>
       )}

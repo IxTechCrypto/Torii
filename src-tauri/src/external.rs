@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! Paths to external binaries/scripts Torii shells out to, plus the git-bash
 //! resolver used to run the (bash) installer script on Windows.
 

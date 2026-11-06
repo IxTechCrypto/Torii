@@ -56,8 +56,9 @@ export interface InstallConfig {
 
 export const INSTALLABLE_FIRMWARE: Firmware = "stock-bitmain";
 
-export function isInstallable(r: HostRecord): boolean {
-  return r.firmware === INSTALLABLE_FIRMWARE;
+// S19 flash logic is temporarily paused pending official 256 Foundation image release.
+export function isInstallable(_r: HostRecord): boolean {
+  return false;
 }
 
 // Mirrors commands::usb::BitaxeUsbStatus (`#[serde(rename_all = "kebab-case")]`).

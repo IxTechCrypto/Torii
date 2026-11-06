@@ -3,35 +3,13 @@
 //! change them without updating `App.tsx`/`api.ts`/`types.ts` and
 //! `lib.rs`'s `generate_handler!` list to match.
 
-use std::io::{BufRead, BufReader};
-use std::process::{Command, Stdio};
-
-use tauri::Emitter;
-
-use crate::external::{resolve_bash, resolve_install_script};
-
 #[tauri::command]
-pub async fn preview(scan_file: String, host: String) -> Result<String, String> {
-    let bash = resolve_bash()?;
-    let install_script = resolve_install_script()?;
-    let output = Command::new(&bash)
-        .arg(&install_script)
-        .arg("--from-scan")
-        .arg(&scan_file)
-        .arg("--host")
-        .arg(&host)
-        .arg("--print-plan")
-        .output()
-        .map_err(|e| format!("failed to run install script: {e}"))?;
-
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
-    } else {
-        Err(String::from_utf8_lossy(&output.stderr).to_string())
-    }
+pub async fn preview(_scan_file: String, _host: String) -> Result<String, String> {
+    Err("Antminer S19 installation is currently paused pending official 256 Foundation image release.".to_string())
 }
 
 #[derive(serde::Deserialize)]
+#[allow(dead_code)]
 pub struct InstallConfig {
     pub scan_file: String,
     pub host: String,
@@ -44,95 +22,6 @@ pub struct InstallConfig {
 }
 
 #[tauri::command]
-pub async fn install(app: tauri::AppHandle, config: InstallConfig) -> Result<i32, String> {
-    // Independent server-side firmware re-check — never trust the client.
-    // No bash process launches for a non-stock host, full stop.
-    let scan_contents = std::fs::read_to_string(&config.scan_file)
-        .map_err(|e| format!("could not read scan file {}: {e}", config.scan_file))?;
-    let records: Vec<crate::commands::scan::HostRecord> = serde_json::from_str(&scan_contents)
-        .map_err(|e| format!("could not parse scan file {}: {e}", config.scan_file))?;
-    let record = records
-        .iter()
-        .find(|r| r.host == config.host)
-        .ok_or_else(|| "host not found in scan file".to_string())?;
-    if record.firmware != "stock-bitmain" {
-        return Err(format!(
-            "refusing install: firmware class '{}' is not stock-bitmain",
-            record.firmware
-        ));
-    }
-
-    let bash = resolve_bash()?;
-    let install_script = resolve_install_script()?;
-    let mut cmd = Command::new(&bash);
-    cmd.arg(&install_script)
-        .arg("--from-scan")
-        .arg(&config.scan_file)
-        .arg("--host")
-        .arg(&config.host)
-        .arg("--user")
-        .arg(config.user.as_deref().unwrap_or("miner"));
-    cmd.env("PASSWORD", config.password.as_deref().unwrap_or("miner"));
-
-    if let Some(rootfs) = &config.rootfs {
-        cmd.arg("--rootfs").arg(rootfs);
-    }
-    if let Some(env) = &config.env {
-        cmd.arg("--env").arg(env);
-    }
-    // TODO(PD): no install-script flag for pool/worker yet — pool_url/worker
-    // are collected in the UI and carried on InstallConfig, but the script
-    // seeds pool config via the rootfs/env blob, not a CLI flag. Not passed.
-
-    cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| format!("failed to spawn install script: {e}"))?;
-
-    // Drain stderr on its own thread so a script that writes a lot to stderr
-    // can't fill the OS pipe buffer and deadlock against the stdout read loop
-    // below.
-    let stderr = child.stderr.take().ok_or("failed to capture stderr")?;
-    let stderr_app = app.clone();
-    let stderr_thread = std::thread::spawn(move || {
-        for line in BufReader::new(stderr).lines().map_while(Result::ok) {
-            let _ = stderr_app.emit("install://log", format!("[stderr] {line}"));
-        }
-    });
-
-    let stdout = child.stdout.take().ok_or("failed to capture stdout")?;
-    let mut read_err: Option<String> = None;
-    for line in BufReader::new(stdout).lines() {
-        match line {
-            Ok(line) => {
-                let _ = app.emit("install://log", line);
-            }
-            Err(e) => {
-                read_err = Some(format!("error reading install output: {e}"));
-                break;
-            }
-        }
-    }
-
-    // On a read error the script may still be running; make sure it doesn't
-    // outlive this function as an orphaned, unmonitored flash of real hardware.
-    if read_err.is_some() {
-        let _ = child.kill();
-    }
-    let wait_result = child
-        .wait()
-        .map_err(|e| format!("failed to wait on install script: {e}"));
-    let _ = stderr_thread.join();
-
-    // Always give the frontend a terminal event, no matter which path below
-    // returns, so InstallLog.tsx never waits forever on install://done.
-    let exit_code = wait_result.as_ref().map(|s| s.code().unwrap_or(-1)).unwrap_or(-1);
-    let _ = app.emit("install://done", exit_code);
-
-    if let Some(e) = read_err {
-        return Err(e);
-    }
-    wait_result?;
-    Ok(exit_code)
+pub async fn install(_app: tauri::AppHandle, _config: InstallConfig) -> Result<i32, String> {
+    Err("Antminer S19 installation is currently paused pending official 256 Foundation image release.".to_string())
 }
