@@ -71,7 +71,36 @@ export default function Nano3sFlashLog({ imagePath, role, acceptWarnings, onDone
         <p className="scan-hint">Don't unplug the cable or power until this finishes.</p>
       )}
       {exitCode === null && refusal !== null && (
-        <p className="error">Nothing was written to the device. Go back to step 1 to fix this and try again.</p>
+        <div style={{ margin: "0.5rem 0" }}>
+          <p className="error" style={{ marginBottom: "0.5rem" }}>
+            Nothing was written to the device. Go back to step 1 to fix this and try again.
+          </p>
+          {refusal.toLowerCase().includes("k230-flash") && (
+            <div style={{
+              background: "rgba(0, 240, 255, 0.08)",
+              border: "1px solid rgba(0, 240, 255, 0.4)",
+              borderRadius: "6px",
+              padding: "0.85rem 1rem",
+              marginTop: "0.5rem",
+              fontSize: "0.85rem",
+              lineHeight: 1.5,
+              color: "#e0f0ff"
+            }}>
+              <strong style={{ color: "#00f0ff", display: "block", marginBottom: "0.35rem" }}>
+                💡 Missing Flasher Engine in Standalone torii.exe
+              </strong>
+              <span>If you downloaded loose <code>torii.exe</code> directly into Downloads, the bundled flasher folder was omitted. Choose one:</span>
+              <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.25rem" }}>
+                <li>
+                  Run <strong>torii-setup.exe</strong> or extract <strong>torii-windows-portable.zip</strong> (both bundle the flasher engine).
+                </li>
+                <li>
+                  Or open Command Prompt / Terminal and run: <code>pip install k230-flash</code>
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
       )}
       {percent !== null && (
         <div style={{ margin: "0.5rem 0", border: "1px solid var(--border)", height: "1.25rem", position: "relative" }}>

@@ -204,8 +204,13 @@ pub fn resolve_k230_python() -> Result<String, String> {
         .filter(|p| Path::new(p).exists() || !p.contains(std::path::MAIN_SEPARATOR))
         .find(|python| has_module(python))
         .ok_or_else(|| {
-            "no Python with k230-flash found; install it with `pip install k230-flash`, or set \
-             K230_PYTHON to the python that has it"
+            "No Python environment with 'k230-flash' found.\n\n\
+             To resolve this:\n\
+             1. Run the installer 'torii-setup.exe' or extract 'torii-v0.1.0-windows-portable.zip'\n\
+                (both bundle the private Python runtime automatically).\n\
+             2. Or if running standalone torii.exe, open Command Prompt and install the tool:\n\
+                pip install k230-flash\n\
+             3. Or set the K230_PYTHON environment variable to your Python executable path."
                 .to_string()
         })
 }
