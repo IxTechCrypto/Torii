@@ -79,6 +79,16 @@ const KNOWN_IMAGES: &[KnownImage] = &[
         role: Nano3sImageRole::Stock,
     },
     KnownImage {
+        // nano-mujina v5.0.3 full-flash image, matching the SHA-256 GitHub
+        // lists for the release asset at
+        // github.com/IxTechCrypto/mujina/releases/tag/v5.0.3.
+        // Adds split IPC job support (cmd 13/14) for large-coinbase pools (Ocean),
+        // resolving job rejection when coinbases exceed 1024B.
+        sha256: "02938ff47e6f7fb1ef8939a2149f66de8373a97638d9c105fe666eaae3392f68",
+        label: "nano-mujina v5.0.3",
+        role: Nano3sImageRole::Mujina,
+    },
+    KnownImage {
         // nano-mujina v5.0.2 full-flash image, matching the SHA-256 GitHub
         // lists for the release asset at
         // github.com/IxTechCrypto/mujina/releases/tag/v5.0.2.
