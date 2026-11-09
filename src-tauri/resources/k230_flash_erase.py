@@ -10,10 +10,31 @@ in place and can stop the board booting. This wrapper adds the erase and
 otherwise runs k230-flash unchanged, with the same arguments and exit codes.
 """
 
+import os
+import sys
+
+# Ensure bundled libusb-1.0.dll is discoverable by PyUSB on Windows environments
+# (especially clean user PCs where libusb is not installed in System32 or global PATH).
+try:
+    import libusb_package
+    _lib_path = libusb_package.get_library_path()
+    if _lib_path and _lib_path.is_file():
+        _lib_dir = str(_lib_path.parent)
+        if _lib_dir not in os.environ.get("PATH", ""):
+            os.environ["PATH"] = _lib_dir + os.pathsep + os.environ.get("PATH", "")
+        if hasattr(os, "add_dll_directory"):
+            try:
+                os.add_dll_directory(_lib_dir)
+            except Exception:
+                pass
+    import usb.backend.libusb1 as _l1
+    _l1.get_backend(find_library=libusb_package.find_library)
+except Exception:
+    pass
+
 import inspect
 import re
 import struct
-import sys
 from importlib.metadata import PackageNotFoundError, version
 
 import k230_flash.burners as burners

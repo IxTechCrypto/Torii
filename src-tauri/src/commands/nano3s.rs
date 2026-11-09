@@ -531,6 +531,26 @@ pub async fn flash_nano3s(
     let python = resolve_k230_python()?;
     let wrapper = write_flash_wrapper(&app)?;
     let mut cmd = Command::new(&python);
+
+    // Prepend Python and bundled libusb_package directories to PATH so native DLL loading
+    // succeeds out-of-the-box on clean Windows machines without manual DLL installation.
+    if let Some(python_dir) = Path::new(&python).parent() {
+        let libusb_dir = python_dir
+            .join("Lib")
+            .join("site-packages")
+            .join("libusb_package");
+        let current_path = std::env::var_os("PATH").unwrap_or_default();
+        let mut paths: Vec<std::path::PathBuf> = Vec::new();
+        if libusb_dir.exists() {
+            paths.push(libusb_dir);
+        }
+        paths.push(python_dir.to_path_buf());
+        paths.extend(std::env::split_paths(&current_path));
+        if let Ok(new_path) = std::env::join_paths(paths) {
+            cmd.env("PATH", new_path);
+        }
+    }
+
     hide_console(&mut cmd)
         .arg(&wrapper)
         .args(["--media-type", "SPI_NAND", "--log-level", "INFO"])
