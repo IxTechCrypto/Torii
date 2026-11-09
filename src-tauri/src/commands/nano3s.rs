@@ -79,9 +79,10 @@ const KNOWN_IMAGES: &[KnownImage] = &[
         role: Nano3sImageRole::Stock,
     },
     KnownImage {
-        // nano-mujina v5.0.3 hardened full-flash image (permissions & BLE unblocked).
-        sha256: "fd9215c13359c145077d98ae9c95f5949b08bd20301f8c8b5f2eb52dfaa91aa1",
-        label: "nano-mujina v5.0.3 (hardened)",
+        // nano-mujina v5.0.4 full-flash image: permissions 750/755, immediate LCD/BLE unblock,
+        // RAM-based tmpfs supervisor logs, guarded watchdog, sanitized donor calibration, and OTA bundle.
+        sha256: "bb3153f2e110a3bbf1f77ff423b1d59d068ae0bd8dc43db9d5780d35975e0894",
+        label: "nano-mujina v5.0.4",
         role: Nano3sImageRole::Mujina,
     },
     KnownImage {
