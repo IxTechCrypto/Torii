@@ -79,6 +79,20 @@ const KNOWN_IMAGES: &[KnownImage] = &[
         role: Nano3sImageRole::Stock,
     },
     KnownImage {
+        // nano-mujina v5.0.1 full-flash image, matching the SHA-256 GitHub
+        // lists for the release asset at
+        // github.com/IxTechCrypto/mujina/releases/tag/v5.0.1 (and v5.0.0).
+        sha256: "2a53c4402dcfb3ec49c4012a2aa501e8116d0968e8a24a461a353966d925089e",
+        label: "nano-mujina v5.0.1",
+        role: Nano3sImageRole::Mujina,
+    },
+    KnownImage {
+        // nano-mujina v4.0.0 full-flash release image.
+        sha256: "4492d8c6c07de23408867b40426e55acacbd31fe81b328a54337beaca61d1376",
+        label: "nano-mujina v4.0.0",
+        role: Nano3sImageRole::Mujina,
+    },
+    KnownImage {
         // nano-mujina alpha-v3 full-flash image, matching the SHA-256 GitHub
         // lists for the release asset at
         // github.com/aadhi1014/nano-mujina/releases/tag/alpha-v3. Unlike
@@ -304,11 +318,7 @@ pub fn inspect_kdimg_file(path: &Path, role: Nano3sImageRole) -> Result<KdimgInf
             k.label
         )),
         Some(_) => {}
-        None => warnings.push(
-            "this image's SHA-256 isn't in Torii's list of verified images; compare it with the \
-             hash published by its source before flashing"
-                .to_string(),
-        ),
+        None => warnings.push(UNVERIFIED_SHA_WARNING.to_string()),
     }
 
     Ok(KdimgInfo {
@@ -345,14 +355,39 @@ pub async fn list_k230_burn_devices() -> Result<Vec<K230BurnDevice>, String> {
     burn_mode_devices().await
 }
 
+const UNVERIFIED_SHA_WARNING: &str =
+    "this image's SHA-256 isn't in Torii's list of verified images; compare it with the \
+     hash published by its source before flashing";
+
+/// If an image wasn't in the compiled-in `KNOWN_IMAGES` table and we're
+/// installing Mujina, check live GitHub Releases (`IxTechCrypto/mujina` and
+/// `aadhi1014/nano-mujina`) so newly published firmware releases verify
+/// automatically without requiring a Torii binary update.
+async fn resolve_remote_known_image(mut info: KdimgInfo, role: Nano3sImageRole) -> KdimgInfo {
+    if info.known.is_none() && role == Nano3sImageRole::Mujina {
+        if let Some(remote) =
+            crate::commands::github_releases::lookup_github_release_sha256(&info.sha256).await
+        {
+            info.known = Some(KnownImageInfo {
+                label: remote.label,
+                role: Nano3sImageRole::Mujina,
+            });
+            info.warnings.retain(|w| w != UNVERIFIED_SHA_WARNING);
+        }
+    }
+    info
+}
+
 #[tauri::command]
 pub async fn inspect_nano3s_image(
     path: String,
     role: Nano3sImageRole,
 ) -> Result<KdimgInfo, String> {
-    tauri::async_runtime::spawn_blocking(move || inspect_kdimg_file(Path::new(&path), role))
-        .await
-        .map_err(|e| format!("image check task failed: {e}"))?
+    let info =
+        tauri::async_runtime::spawn_blocking(move || inspect_kdimg_file(Path::new(&path), role))
+            .await
+            .map_err(|e| format!("image check task failed: {e}"))??;
+    Ok(resolve_remote_known_image(info, role).await)
 }
 
 /// The image path Torii suggests for `role` (env override or the default
@@ -450,6 +485,7 @@ pub async fn flash_nano3s(
         tauri::async_runtime::spawn_blocking(move || inspect_kdimg_file(Path::new(&path), role))
             .await
             .map_err(|e| format!("image check task failed: {e}"))??;
+    let info = resolve_remote_known_image(info, role).await;
     if !info.problems.is_empty() {
         return Err(format!("refusing to flash: {}", info.problems.join("; ")));
     }

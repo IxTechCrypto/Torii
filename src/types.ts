@@ -167,6 +167,14 @@ export interface BundleInfo {
   warnings: string[];
 }
 
+export interface AppUpdateInfo {
+  current_version: string;
+  latest_version: string;
+  update_available: boolean;
+  release_url: string;
+  release_name: string;
+}
+
 // nano-mujina serves its API on port 80 rather than mujina's default 7785.
 export const NANO_MUJINA_API_PORT = 80;
 

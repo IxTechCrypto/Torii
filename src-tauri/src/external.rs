@@ -13,8 +13,32 @@ pub const DEFAULT_BITAXE_RAW_GAMMA_ELF: &str =
     r"D:\github\bitaxe-raw\bin\bitaxe-raw-gamma";
 pub const DEFAULT_BITAXE_RAW_NERDQAXE_PP_ELF: &str =
     r"D:\github\bitaxe-raw\bin\bitaxe-raw-nerdqaxe-pp";
-pub const DEFAULT_NANO3S_MUJINA_KDIMG: &str = r"D:\github\nano-mujina\nano-mujina-alpha-v3.kdimg";
+pub const DEFAULT_NANO3S_MUJINA_KDIMG: &str = r"C:\Users\grant\Downloads\nano-mujina-v5-release.kdimg";
 pub const DEFAULT_NANO3S_STOCK_KDIMG: &str = r"D:\github\Avalon_Nano3s\output\stock.kdimg";
+
+/// Suggested `.kdimg` for a Nano 3S flash: `NANO3S_MUJINA_KDIMG` /
+/// `NANO3S_STOCK_KDIMG` if set, else common local paths, whichever
+/// exists first.
+pub fn default_nano3s_image(role: crate::commands::nano3s::Nano3sImageRole) -> Option<String> {
+    use crate::commands::nano3s::Nano3sImageRole;
+    let (var, defaults): (&str, &[&str]) = match role {
+        Nano3sImageRole::Mujina => (
+            "NANO3S_MUJINA_KDIMG",
+            &[
+                DEFAULT_NANO3S_MUJINA_KDIMG,
+                r"D:\downloads\nano-mujina-v5-release.kdimg",
+                r"D:\github\nano-mujina\nano-mujina-v5-release.kdimg",
+                r"D:\github\nano-mujina\nano-mujina-alpha-v3.kdimg",
+            ],
+        ),
+        Nano3sImageRole::Stock => ("NANO3S_STOCK_KDIMG", &[DEFAULT_NANO3S_STOCK_KDIMG]),
+    };
+    std::env::var(var)
+        .ok()
+        .into_iter()
+        .chain(defaults.iter().map(|s| (*s).to_string()))
+        .find(|p| Path::new(p).exists())
+}
 
 /// Resolve `install_mujina_aml.sh` by checking env VAR or relative workspace paths.
 pub fn resolve_install_script() -> Result<String, String> {
@@ -213,22 +237,6 @@ pub fn resolve_k230_python() -> Result<String, String> {
              3. Or set the K230_PYTHON environment variable to your Python executable path."
                 .to_string()
         })
-}
-
-/// Suggested `.kdimg` for a Nano 3S flash: `NANO3S_MUJINA_KDIMG` /
-/// `NANO3S_STOCK_KDIMG` if set, else the default local path, whichever
-/// exists.
-pub fn default_nano3s_image(role: crate::commands::nano3s::Nano3sImageRole) -> Option<String> {
-    use crate::commands::nano3s::Nano3sImageRole;
-    let (var, default) = match role {
-        Nano3sImageRole::Mujina => ("NANO3S_MUJINA_KDIMG", DEFAULT_NANO3S_MUJINA_KDIMG),
-        Nano3sImageRole::Stock => ("NANO3S_STOCK_KDIMG", DEFAULT_NANO3S_STOCK_KDIMG),
-    };
-    std::env::var(var)
-        .ok()
-        .into_iter()
-        .chain(std::iter::once(default.to_string()))
-        .find(|p| Path::new(p).exists())
 }
 
 #[cfg(test)]

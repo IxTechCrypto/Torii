@@ -5,6 +5,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
+  AppUpdateInfo,
   BundleInfo,
   HostRecord,
   InstallConfig,
@@ -107,6 +108,10 @@ export function onNano3sFlashProgress(cb: (percent: number) => void): Promise<Un
 
 export function onNano3sFlashDone(cb: (code: number) => void): Promise<UnlistenFn> {
   return listen<number>("nano3s-flash://done", (event) => cb(event.payload));
+}
+
+export function checkAppUpdate(): Promise<AppUpdateInfo> {
+  return invoke("check_app_update");
 }
 
 export type { HostRecord };

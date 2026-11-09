@@ -1,4 +1,5 @@
 pub mod bitaxe_flash;
+pub mod github_releases;
 pub mod install;
 pub mod nano3s;
 pub mod nano3s_update;

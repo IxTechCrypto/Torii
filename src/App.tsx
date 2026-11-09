@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import ScanTable from "./components/ScanTable";
 import ConfigForm from "./components/ConfigForm";
 import ConfirmModal from "./components/ConfirmModal";
@@ -12,12 +13,13 @@ import Nano3sFlashLog from "./components/Nano3sFlashLog";
 import Nano3sFlashDoneModal from "./components/Nano3sFlashDoneModal";
 import HardwareArchetypeSelector, { type HardwareArchetype } from "./components/HardwareArchetypeSelector";
 import HandoffDashboardModal from "./components/HandoffDashboardModal";
-import { peekUsbSerial, preview } from "./api";
+import { checkAppUpdate, peekUsbSerial, preview } from "./api";
 import { detectAsic } from "./asic";
 import {
   formatKdimgSummary,
   formatUsbDeviceSummary,
   NANO_MUJINA_API_PORT,
+  type AppUpdateInfo,
   type HostRecord,
   type InstallConfig,
   type KdimgInfo,
@@ -55,6 +57,15 @@ function App() {
   } | null>(null);
   const [nano3sDoneRole, setNano3sDoneRole] = useState<Nano3sImageRole | null>(null);
   const [lanHandoffHost, setLanHandoffHost] = useState<string | null>(null);
+  const [appUpdate, setAppUpdate] = useState<AppUpdateInfo | null>(null);
+
+  useEffect(() => {
+    checkAppUpdate()
+      .then((info) => {
+        setAppUpdate(info);
+      })
+      .catch(() => {});
+  }, []);
 
   // Whenever a candidate device is up for confirmation, listen on its port
   // for a few seconds and capture whatever the firmware already running on
@@ -275,9 +286,37 @@ function App() {
           <span />
           <span />
         </div>
-        <header className="app-header">
-          <img src="/torii-icon.svg" alt="" className="app-logo" />
-          <h1>Torii</h1>
+        <header className="app-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <img src="/torii-icon.svg" alt="" className="app-logo" />
+            <h1>Torii</h1>
+            {appUpdate && (
+              <span style={{ fontSize: "0.72rem", color: "#6a7b8a", fontFamily: "'Share Tech Mono', monospace" }}>
+                v{appUpdate.current_version}
+              </span>
+            )}
+          </div>
+          {appUpdate?.update_available && (
+            <button
+              type="button"
+              onClick={() => openUrl(appUpdate.release_url)}
+              style={{
+                padding: "0.35rem 0.75rem",
+                background: "rgba(0, 240, 255, 0.14)",
+                border: "1px solid #00f0ff",
+                color: "#00f0ff",
+                borderRadius: "999px",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                fontFamily: "'Orbitron', sans-serif",
+                boxShadow: "0 0 10px rgba(0, 240, 255, 0.25)",
+              }}
+              title={`Download ${appUpdate.release_name}`}
+            >
+              ⬆ Update Available ({appUpdate.latest_version})
+            </button>
+          )}
         </header>
 
         <nav className="wizard-stepper">

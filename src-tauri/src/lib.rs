@@ -2,6 +2,7 @@ mod commands;
 mod external;
 
 use commands::bitaxe_flash::flash_bitaxe_raw;
+use commands::github_releases::check_app_update;
 use commands::install::{install, preview};
 use commands::nano3s::{
     flash_nano3s, inspect_nano3s_image, list_k230_burn_devices, nano3s_default_image,
@@ -29,7 +30,8 @@ pub fn run() {
             nano3s_default_image,
             flash_nano3s,
             inspect_nano3s_bundle,
-            update_nano3s_bundle
+            update_nano3s_bundle,
+            check_app_update
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

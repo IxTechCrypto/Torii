@@ -38,6 +38,12 @@ struct KnownBundle {
 
 const KNOWN_BUNDLES: &[KnownBundle] = &[
     KnownBundle {
+        // SHA-256 for the release asset at
+        // github.com/IxTechCrypto/mujina/releases/tag/v5.0.1 (and v5.0.0).
+        sha256: "5dc0c2c982e38fcb489077767ca4f16bd265213f58ba64d649dc1e650eb32550",
+        label: "nano-mujina v5.0.1",
+    },
+    KnownBundle {
         // SHA-256 GitHub lists for the release asset at
         // github.com/aadhi1014/nano-mujina/releases/tag/alpha-v4.
         // mujina-minerd only, no harness section.
@@ -134,11 +140,7 @@ pub fn inspect_bundle_bytes(path: &str, body: &[u8]) -> Result<BundleInfo, Strin
         .find(|k| k.sha256 == sha256)
         .map(|k| k.label.to_string());
     if known.is_none() {
-        warnings.push(
-            "this bundle's SHA-256 isn't in Torii's list of verified bundles; compare it with \
-             the hash published by its source before uploading"
-                .into(),
-        );
+        warnings.push(UNVERIFIED_BUNDLE_WARNING.into());
     }
 
     Ok(BundleInfo {
@@ -159,11 +161,29 @@ fn inspect_bundle_file(path: &str) -> Result<(BundleInfo, Vec<u8>), String> {
     Ok((info, body))
 }
 
+const UNVERIFIED_BUNDLE_WARNING: &str =
+    "this bundle's SHA-256 isn't in Torii's list of verified bundles; compare it with \
+     the hash published by its source before uploading";
+
+async fn resolve_remote_known_bundle(mut info: BundleInfo) -> BundleInfo {
+    if info.known.is_none() {
+        if let Some(remote) =
+            crate::commands::github_releases::lookup_github_release_sha256(&info.sha256).await
+        {
+            info.known = Some(remote.label);
+            info.warnings.retain(|w| w != UNVERIFIED_BUNDLE_WARNING);
+        }
+    }
+    info
+}
+
 #[tauri::command]
 pub async fn inspect_nano3s_bundle(path: String) -> Result<BundleInfo, String> {
-    tauri::async_runtime::spawn_blocking(move || inspect_bundle_file(&path).map(|(info, _)| info))
-        .await
-        .map_err(|e| format!("bundle check task failed: {e}"))?
+    let info =
+        tauri::async_runtime::spawn_blocking(move || inspect_bundle_file(&path).map(|(info, _)| info))
+            .await
+            .map_err(|e| format!("bundle check task failed: {e}"))??;
+    Ok(resolve_remote_known_bundle(info).await)
 }
 
 /// Confirms `ip` is running nano-mujina on a Nano 3S before anything is
@@ -220,6 +240,7 @@ pub async fn update_nano3s_bundle(
     let (info, body) = tauri::async_runtime::spawn_blocking(move || inspect_bundle_file(&path))
         .await
         .map_err(|e| format!("bundle check task failed: {e}"))??;
+    let info = resolve_remote_known_bundle(info).await;
     if !info.problems.is_empty() {
         return Err(format!("can't upload this bundle: {}", info.problems.join("; ")));
     }
