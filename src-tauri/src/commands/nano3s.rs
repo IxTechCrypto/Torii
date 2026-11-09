@@ -84,7 +84,7 @@ const KNOWN_IMAGES: &[KnownImage] = &[
         // github.com/IxTechCrypto/mujina/releases/tag/v5.0.3.
         // Adds split IPC job support (cmd 13/14) for large-coinbase pools (Ocean),
         // resolving job rejection when coinbases exceed 1024B.
-        sha256: "1303dcbd187c532da2d8fca9f76a3c59b57cdbf1cdf462fd01baac331e30994f",
+        sha256: "e1ea53e45812109688f9cfc0293476d8f0944f13b8124da7799c5ed34a070d3f",
         label: "nano-mujina v5.0.3",
         role: Nano3sImageRole::Mujina,
     },
