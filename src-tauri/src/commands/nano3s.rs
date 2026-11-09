@@ -79,9 +79,17 @@ const KNOWN_IMAGES: &[KnownImage] = &[
         role: Nano3sImageRole::Stock,
     },
     KnownImage {
-        // nano-mujina v5.0.1 full-flash image, matching the SHA-256 GitHub
+        // nano-mujina v5.0.2 full-flash image, matching the SHA-256 GitHub
         // lists for the release asset at
-        // github.com/IxTechCrypto/mujina/releases/tag/v5.0.1 (and v5.0.0).
+        // github.com/IxTechCrypto/mujina/releases/tag/v5.0.2.
+        // Packages updated Core 1 rtos_core.elf and watchdog in app_ubi,
+        // resolving the warmup loop and supporting per-chip AutoTuning.
+        sha256: "aa891f7ae969755e01bf09d6e46d547097ab728e6a8034e187371dfe8a0068fb",
+        label: "nano-mujina v5.0.2",
+        role: Nano3sImageRole::Mujina,
+    },
+    KnownImage {
+        // nano-mujina v5.0.1 full-flash image.
         sha256: "2a53c4402dcfb3ec49c4012a2aa501e8116d0968e8a24a461a353966d925089e",
         label: "nano-mujina v5.0.1",
         role: Nano3sImageRole::Mujina,
