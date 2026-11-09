@@ -25,7 +25,9 @@ pub fn default_nano3s_image(role: crate::commands::nano3s::Nano3sImageRole) -> O
         Nano3sImageRole::Mujina => (
             "NANO3S_MUJINA_KDIMG",
             &[
+                r"C:\Users\grant\Downloads\nano-mujina-v5.0.3-release.kdimg",
                 DEFAULT_NANO3S_MUJINA_KDIMG,
+                r"D:\downloads\nano-mujina-v5.0.3-release.kdimg",
                 r"D:\downloads\nano-mujina-v5-release.kdimg",
                 r"D:\github\nano-mujina\nano-mujina-v5-release.kdimg",
                 r"D:\github\nano-mujina\nano-mujina-alpha-v3.kdimg",
