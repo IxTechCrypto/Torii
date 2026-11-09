@@ -79,6 +79,12 @@ const KNOWN_IMAGES: &[KnownImage] = &[
         role: Nano3sImageRole::Stock,
     },
     KnownImage {
+        // nano-mujina v5.0.3 hardened full-flash image (permissions & BLE unblocked).
+        sha256: "fd9215c13359c145077d98ae9c95f5949b08bd20301f8c8b5f2eb52dfaa91aa1",
+        label: "nano-mujina v5.0.3 (hardened)",
+        role: Nano3sImageRole::Mujina,
+    },
+    KnownImage {
         // nano-mujina v5.0.3 full-flash image, matching the SHA-256 GitHub
         // lists for the release asset at
         // github.com/IxTechCrypto/mujina/releases/tag/v5.0.3.
