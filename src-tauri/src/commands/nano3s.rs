@@ -81,7 +81,7 @@ const KNOWN_IMAGES: &[KnownImage] = &[
     KnownImage {
         // nano-mujina v5.0.4 full-flash image: permissions 750/755, immediate LCD/BLE unblock,
         // RAM-based tmpfs supervisor logs, guarded watchdog, sanitized donor calibration, and static crt binaries.
-        sha256: "c070762e4a66e9ac71be8a73baf7f7a7de79d22822f3b6b9ed21685f4ea2decf",
+        sha256: "3a0b7bd054ae56abc66c2b2ed3e230a546b355bd0710e20f1d71ca217ecbe1a6",
         label: "nano-mujina v5.0.4",
         role: Nano3sImageRole::Mujina,
     },
