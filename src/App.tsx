@@ -9,6 +9,7 @@ import BitaxeUsbTable from "./components/BitaxeUsbTable";
 import BitaxeFlashLog from "./components/BitaxeFlashLog";
 import FlashSuccessModal from "./components/FlashSuccessModal";
 import Nano3sTabs from "./components/Nano3sTabs";
+import Toggle from "./components/Toggle";
 import Nano3sFlashLog from "./components/Nano3sFlashLog";
 import Nano3sFlashDoneModal from "./components/Nano3sFlashDoneModal";
 import HardwareArchetypeSelector, { type HardwareArchetype } from "./components/HardwareArchetypeSelector";
@@ -480,14 +481,12 @@ function App() {
                     {w}
                   </p>
                 ))}
-                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={nano3sWarningsAccepted}
-                    onChange={(e) => setNano3sWarningsAccepted(e.target.checked)}
-                  />
-                  <span>I've checked the SHA-256 above against the image's source and want to flash it.</span>
-                </label>
+                <Toggle
+                  checked={nano3sWarningsAccepted}
+                  onChange={setNano3sWarningsAccepted}
+                  title="Acknowledge & Confirm Flash"
+                  description="I have verified the SHA-256 signature against the source and want to flash this image."
+                />
               </div>
             )}
           </ConfirmModal>

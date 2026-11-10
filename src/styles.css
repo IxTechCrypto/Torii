@@ -908,3 +908,177 @@ input:focus {
   background: rgba(255, 255, 255, 0.08);
 }
 
+
+
+/* --- Cyber Toggle Switch (Mobile / Touch Friendly) --- */
+.cyber-toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  clip-path: var(--shape-sm);
+  cursor: pointer;
+  user-select: none;
+  transition: all 150ms ease-out;
+  min-height: 52px;
+}
+
+.cyber-toggle-wrap:hover:not(.cyber-toggle-disabled) {
+  border-color: var(--cyan-dim);
+  background: var(--bg-panel-alt);
+}
+
+.cyber-toggle-wrap.cyber-toggle-active {
+  border-color: var(--cyan);
+  background: rgba(0, 255, 242, 0.06);
+}
+
+.cyber-toggle-wrap.cyber-toggle-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cyber-toggle-track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #14141f;
+  border: 1px solid var(--border);
+  clip-path: var(--shape-sm);
+  flex-shrink: 0;
+  transition: all 150ms ease-out;
+}
+
+.cyber-toggle-active .cyber-toggle-track {
+  background: rgba(0, 255, 242, 0.25);
+  border-color: var(--cyan);
+  filter: drop-shadow(0 0 6px rgba(0, 255, 242, 0.4));
+}
+
+.cyber-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: var(--text-dim);
+  clip-path: var(--shape-sm);
+  transition: transform 150ms ease-out, background 150ms ease-out;
+}
+
+.cyber-toggle-active .cyber-toggle-thumb {
+  transform: translateX(20px);
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+.cyber-toggle-label-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.cyber-toggle-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.03em;
+}
+
+.cyber-toggle-active .cyber-toggle-title {
+  color: #fff;
+}
+
+.cyber-toggle-desc {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
+/* --- Telemetry Watcher & Live Status Card --- */
+.ota-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  clip-path: var(--shape-sm);
+  margin-top: 0.5rem;
+}
+
+.ota-status-card-verified {
+  border-color: #1bff9c;
+  background: rgba(27, 255, 156, 0.04);
+}
+
+.ota-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ota-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+  clip-path: var(--shape-sm);
+}
+
+.ota-status-badge-pulse {
+  background: rgba(0, 255, 242, 0.15);
+  color: var(--cyan);
+  border: 1px solid var(--cyan);
+}
+
+.ota-status-badge-verified {
+  background: rgba(27, 255, 156, 0.2);
+  color: #1bff9c;
+  border: 1px solid #1bff9c;
+}
+
+.ota-status-badge-warn {
+  background: rgba(255, 32, 80, 0.2);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.ota-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.6rem;
+}
+
+.ota-stat-box {
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border);
+  padding: 0.55rem 0.75rem;
+  clip-path: var(--shape-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ota-stat-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ota-stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: inherit;
+}
