@@ -7,7 +7,9 @@ use commands::install::{install, preview};
 use commands::nano3s::{
     flash_nano3s, inspect_nano3s_image, list_k230_burn_devices, nano3s_default_image,
 };
-use commands::nano3s_update::{inspect_nano3s_bundle, update_nano3s_bundle};
+use commands::nano3s_update::{
+    fetch_latest_nano3s_bundle, inspect_nano3s_bundle, nano3s_default_bundle, update_nano3s_bundle,
+};
 use commands::scan::scan;
 use commands::telemetry::poll_miner;
 use commands::usb::{list_usb_devices, peek_usb_serial};
@@ -31,6 +33,8 @@ pub fn run() {
             flash_nano3s,
             inspect_nano3s_bundle,
             update_nano3s_bundle,
+            nano3s_default_bundle,
+            fetch_latest_nano3s_bundle,
             check_app_update
         ])
         .run(tauri::generate_context!())

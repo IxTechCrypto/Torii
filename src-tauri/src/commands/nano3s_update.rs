@@ -291,6 +291,46 @@ pub async fn update_nano3s_bundle(
     Ok(detail)
 }
 
+#[tauri::command]
+pub fn nano3s_default_bundle() -> Option<String> {
+    crate::external::default_nano3s_bundle()
+}
+
+#[tauri::command]
+pub async fn fetch_latest_nano3s_bundle() -> Result<String, String> {
+    let client = reqwest::Client::builder()
+        .user_agent("torii-provisioner")
+        .timeout(Duration::from_secs(60))
+        .build()
+        .map_err(|e| format!("http client init failed: {e}"))?;
+
+    let url = "https://github.com/IxTechCrypto/mujina/releases/download/v5.0.4/nano-mujina-v5.0.4-bundle.bin";
+    let resp = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("failed to download bundle from {url}: {e}"))?;
+
+    if !resp.status().is_success() {
+        return Err(format!("download from {url} returned HTTP {}", resp.status()));
+    }
+
+    let bytes = resp
+        .bytes()
+        .await
+        .map_err(|e| format!("failed to read bundle stream: {e}"))?;
+
+    let downloads_dir = std::env::var("USERPROFILE")
+        .map(|u| std::path::PathBuf::from(u).join("Downloads"))
+        .unwrap_or_else(|_| std::path::PathBuf::from("."));
+
+    let target_path = downloads_dir.join("nano-mujina-v5.0.4-bundle.bin");
+    std::fs::write(&target_path, &bytes)
+        .map_err(|e| format!("failed to save bundle to {}: {e}", target_path.display()))?;
+
+    Ok(target_path.to_string_lossy().to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

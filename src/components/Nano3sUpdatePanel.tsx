@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { inspectNano3sBundle, pollMiner, updateNano3sBundle } from "../api";
+import {
+  fetchLatestNano3sBundle,
+  inspectNano3sBundle,
+  nano3sDefaultBundle,
+  pollMiner,
+  updateNano3sBundle,
+} from "../api";
 import { parseMujinaState, type MinerStats } from "../telemetry";
 import type { BundleInfo } from "../types";
 import Toggle from "./Toggle";
@@ -38,7 +44,7 @@ export default function Nano3sUpdatePanel() {
   const [bundlePath, setBundlePath] = useState("");
   const [info, setInfo] = useState<BundleInfo | null>(null);
   const [accepted, setAccepted] = useState(false);
-  const [busy, setBusy] = useState<"checking" | "uploading" | null>(null);
+  const [busy, setBusy] = useState<"checking" | "uploading" | "fetching" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
 
@@ -60,8 +66,23 @@ export default function Nano3sUpdatePanel() {
     }
   }
 
+  // Prepopulate default bundle if found on disk
   useEffect(() => {
-    return () => stopTimers();
+    let cancelled = false;
+    nano3sDefaultBundle().then((def) => {
+      if (!cancelled && def && !bundlePath) {
+        setBundlePath(def);
+        inspectNano3sBundle(cleanPath(def))
+          .then((res) => {
+            if (!cancelled) setInfo(res);
+          })
+          .catch(() => {});
+      }
+    });
+    return () => {
+      cancelled = true;
+      stopTimers();
+    };
   }, []);
 
   function reset() {
@@ -83,6 +104,21 @@ export default function Nano3sUpdatePanel() {
     if (typeof picked === "string") {
       setBundlePath(picked);
       reset();
+    }
+  }
+
+  async function fetchBundle() {
+    setBusy("fetching");
+    setError(null);
+    reset();
+    try {
+      const downloadedPath = await fetchLatestNano3sBundle();
+      setBundlePath(downloadedPath);
+      setInfo(await inspectNano3sBundle(cleanPath(downloadedPath)));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -211,6 +247,14 @@ export default function Nano3sUpdatePanel() {
         </label>
 
         <div className="scan-controls">
+          <button
+            type="button"
+            onClick={fetchBundle}
+            disabled={busy !== null || stage === "uploading" || stage === "rebooting"}
+            style={{ borderColor: "var(--cyan)", color: "var(--cyan)" }}
+          >
+            {busy === "fetching" ? "Downloading v5.0.4..." : "⬇ Download v5.0.4"}
+          </button>
           <button
             type="button"
             onClick={browse}

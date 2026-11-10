@@ -94,6 +94,14 @@ export function updateNano3sBundle(ip: string, path: string, acceptWarnings: boo
   return invoke("update_nano3s_bundle", { ip, path, acceptWarnings, token });
 }
 
+export function nano3sDefaultBundle(): Promise<string | null> {
+  return invoke("nano3s_default_bundle");
+}
+
+export function fetchLatestNano3sBundle(): Promise<string> {
+  return invoke("fetch_latest_nano3s_bundle");
+}
+
 // Event contract for the `flash_nano3s` command:
 //   "nano3s-flash://log"      — one event per line of k230-flash output
 //   "nano3s-flash://progress" — percent complete (0–100), in whole steps
