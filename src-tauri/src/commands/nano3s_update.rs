@@ -38,6 +38,11 @@ struct KnownBundle {
 
 const KNOWN_BUNDLES: &[KnownBundle] = &[
     KnownBundle {
+        // SHA-256 for nano-mujina v5.0.5 bundle asset (companion auto-provisioning).
+        sha256: "65d39b6d1780b37bfbd6fcaa08ce76958709f80e7f0b4275c30f2a3fdf59f7c6",
+        label: "nano-mujina v5.0.5",
+    },
+    KnownBundle {
         // SHA-256 for nano-mujina v5.0.4 bundle asset (static crt build).
         sha256: "43f81346576c0b55d9710ba83199d6dfc4edc552278472edbd735226cdd687f8",
         label: "nano-mujina v5.0.4",

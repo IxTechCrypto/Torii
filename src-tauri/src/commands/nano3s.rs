@@ -79,6 +79,14 @@ const KNOWN_IMAGES: &[KnownImage] = &[
         role: Nano3sImageRole::Stock,
     },
     KnownImage {
+        // nano-mujina v5.0.5 full-flash image: Screen 3 Auto Tuner circle with 12 chips,
+        // Screen 6 Plasma Disk with canonical Bitcoin logo, dynamic extranonce2 (2..=8B),
+        // and embedded companion binary auto-provisioning.
+        sha256: "ea1cbeedd543a10274dfae00f1c7a1a7bd86edc6126fb3b03817fad2695f424a",
+        label: "nano-mujina v5.0.5",
+        role: Nano3sImageRole::Mujina,
+    },
+    KnownImage {
         // nano-mujina v5.0.4 full-flash image: permissions 750/755, immediate LCD/BLE unblock,
         // RAM-based tmpfs supervisor logs, guarded watchdog, sanitized donor calibration, and static crt binaries.
         sha256: "3a0b7bd054ae56abc66c2b2ed3e230a546b355bd0710e20f1d71ca217ecbe1a6",
