@@ -15,9 +15,10 @@
 //! The same checks the device runs are repeated here before anything is
 //! sent, and the backend re-inspects the file itself before uploading.
 
+use std::error::Error;
 use std::path::Path;
 use std::time::Duration;
-use reqwest::header::{HeaderValue, AUTHORIZATION};
+use reqwest::header::{HeaderValue, AUTHORIZATION, CONTENT_LENGTH, CONTENT_TYPE};
 use reqwest::StatusCode;
 
 use sha2::{Digest, Sha256};
@@ -243,6 +244,19 @@ pub(crate) fn upload_error(status: StatusCode, body: &str) -> Option<String> {
     }
 }
 
+/// Formats an error together with its full `source()` chain so transport
+/// failures (TCP resets, broken pipes, timeouts) surface their root cause.
+pub(crate) fn format_error_chain(err: &dyn Error) -> String {
+    let mut out = err.to_string();
+    let mut current = err.source();
+    while let Some(src) = current {
+        out.push_str(": ");
+        out.push_str(&src.to_string());
+        current = src.source();
+    }
+    out
+}
+
 /// Uploads the bundle at `path` to the nano-mujina device at `ip`. The device
 /// reboots on success; the returned string is its own `detail` message.
 #[tauri::command]
@@ -252,9 +266,16 @@ pub async fn update_nano3s_bundle(
     accept_warnings: bool,
     token: Option<String>,
 ) -> Result<String, String> {
-    let (info, body) = tauri::async_runtime::spawn_blocking(move || inspect_bundle_file(&path))
-        .await
-        .map_err(|e| format!("bundle check task failed: {e}"))??;
+    let path_for_check = path.clone();
+    let (info, checked_size, checked_mtime) = tauri::async_runtime::spawn_blocking(move || {
+        let meta = std::fs::metadata(Path::new(&path_for_check))
+            .map_err(|e| format!("can't stat {path_for_check}: {e}"))?;
+        let mtime = meta.modified().ok();
+        let (info, _) = inspect_bundle_file(&path_for_check)?;
+        Ok::<_, String>((info, meta.len(), mtime))
+    })
+    .await
+    .map_err(|e| format!("bundle check task failed: {e}"))??;
     let info = resolve_remote_known_bundle(info).await;
     if !info.problems.is_empty() {
         return Err(format!("can't upload this bundle: {}", info.problems.join("; ")));
@@ -263,14 +284,39 @@ pub async fn update_nano3s_bundle(
         return Err(format!("not acknowledged: {}", info.warnings.join("; ")));
     }
 
-    let client = reqwest::Client::new();
-    check_device(&client, &ip).await?;
+    let check_client = reqwest::Client::new();
+    check_device(&check_client, &ip).await?;
+
+    // Dedicated HTTP/1.1 client with no idle connection pooling so the upload
+    // never reuses `check_device()`'s keep-alive socket.
+    let upload_client = reqwest::Client::builder()
+        .http1_only()
+        .pool_max_idle_per_host(0)
+        .timeout(Duration::from_secs(180))
+        .build()
+        .map_err(|e| format!("upload http client init failed: {}", format_error_chain(&e)))?;
+
+    let file = tokio::fs::File::open(&path)
+        .await
+        .map_err(|e| format!("can't open {path} for upload: {e}"))?;
+    let meta = file
+        .metadata()
+        .await
+        .map_err(|e| format!("can't stat {path} for upload: {e}"))?;
+    let file_size = meta.len();
+    let current_mtime = meta.modified().ok();
+    if file_size != checked_size || current_mtime != checked_mtime {
+        return Err(format!(
+            "{path} changed on disk after verification; re-select the bundle and try again"
+        ));
+    }
 
     let url = format!("http://{ip}:{NANO_MUJINA_PORT}/api/v0/firmware/bundle");
-    let mut req = client
+    let mut req = upload_client
         .post(&url)
-        .header("Content-Type", "application/octet-stream")
-        .body(body)
+        .header(CONTENT_TYPE, "application/octet-stream")
+        .header(CONTENT_LENGTH, file_size)
+        .body(reqwest::Body::from(file))
         // ~19 MB over the device's Wi-Fi, plus staging to NAND.
         .timeout(Duration::from_secs(180));
     if let Some(auth) = auth_header(token.as_deref()) {
@@ -283,7 +329,7 @@ pub async fn update_nano3s_bundle(
     let resp = req
         .send()
         .await
-        .map_err(|e| format!("upload to {url} failed: {e}"))?;
+        .map_err(|e| format!("upload to {url} failed: {}", format_error_chain(&e)))?;
     let status = resp.status();
     let text = resp.text().await.unwrap_or_default();
     if let Some(err) = upload_error(status, &text) {
@@ -412,6 +458,29 @@ mod tests {
         b.push(0);
         let info = inspect_bundle_bytes("b", &b).unwrap();
         assert!(info.problems.iter().any(|p| p.contains("unexpected bytes")));
+    }
+
+    #[test]
+    fn format_error_chain_joins_sources() {
+        #[derive(Debug)]
+        struct Outer(&'static str, Box<dyn Error>);
+        impl std::fmt::Display for Outer {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str(self.0)
+            }
+        }
+        impl Error for Outer {
+            fn source(&self) -> Option<&(dyn Error + 'static)> {
+                Some(&*self.1)
+            }
+        }
+
+        let inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "connection reset by peer");
+        let outer = Outer("error sending request", Box::new(inner));
+        assert_eq!(
+            format_error_chain(&outer),
+            "error sending request: connection reset by peer"
+        );
     }
 
     /// Check a real bundle: `TORII_TEST_BUNDLE=/path/to.bin cargo test -- --ignored`.
