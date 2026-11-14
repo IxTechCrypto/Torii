@@ -13,8 +13,8 @@ pub const DEFAULT_BITAXE_RAW_GAMMA_ELF: &str =
     r"D:\github\bitaxe-raw\bin\bitaxe-raw-gamma";
 pub const DEFAULT_BITAXE_RAW_NERDQAXE_PP_ELF: &str =
     r"D:\github\bitaxe-raw\bin\bitaxe-raw-nerdqaxe-pp";
-pub const DEFAULT_NANO3S_MUJINA_KDIMG: &str = r"C:\Users\grant\Downloads\nano-mujina-v5.0.4-release.kdimg";
-pub const DEFAULT_NANO3S_MUJINA_BUNDLE: &str = r"C:\Users\grant\Downloads\nano-mujina-v5.0.4-bundle.bin";
+pub const DEFAULT_NANO3S_MUJINA_KDIMG: &str = r"C:\Users\grant\Downloads\nano-mujina-v5.0.8-release.kdimg";
+pub const DEFAULT_NANO3S_MUJINA_BUNDLE: &str = r"C:\Users\grant\Downloads\nano-mujina-v5.0.8-bundle.bin";
 pub const DEFAULT_NANO3S_STOCK_KDIMG: &str = r"D:\github\Avalon_Nano3s\output\stock.kdimg";
 
 /// Suggested `.kdimg` for a Nano 3S flash: `NANO3S_MUJINA_KDIMG` /
@@ -27,6 +27,8 @@ pub fn default_nano3s_image(role: crate::commands::nano3s::Nano3sImageRole) -> O
             "NANO3S_MUJINA_KDIMG",
             &[
                 DEFAULT_NANO3S_MUJINA_KDIMG,
+                r"D:\github\mujina\release_v5.0.8\nano-mujina-v5.0.8-release.kdimg",
+                r"C:\Users\grant\Downloads\nano-mujina-v5.0.4-release.kdimg",
                 r"C:\Users\grant\Downloads\nano-mujina-v5-release.kdimg",
                 r"D:\downloads\nano-mujina-v5.0.4-release.kdimg",
                 r"D:\downloads\nano-mujina-v5-release.kdimg",
@@ -47,6 +49,9 @@ pub fn default_nano3s_image(role: crate::commands::nano3s::Nano3sImageRole) -> O
 pub fn default_nano3s_bundle() -> Option<String> {
     let defaults = [
         DEFAULT_NANO3S_MUJINA_BUNDLE,
+        r"D:\github\mujina\release_v5.0.8\nano-mujina-v5.0.8-bundle.bin",
+        r"D:\github\torii\nano-mujina-v5.0.8-bundle.bin",
+        r"C:\Users\grant\Downloads\nano-mujina-v5.0.4-bundle.bin",
         r"C:\Users\grant\Downloads\nano-mujina-v5-bundle.bin",
         r"D:\downloads\nano-mujina-v5.0.4-bundle.bin",
         r"D:\downloads\nano-mujina-v5-bundle.bin",

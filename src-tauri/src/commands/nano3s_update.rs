@@ -39,6 +39,11 @@ struct KnownBundle {
 
 const KNOWN_BUNDLES: &[KnownBundle] = &[
     KnownBundle {
+        // SHA-256 for nano-mujina v5.0.8 bundle asset (90C target, -100MHz floor, 140W ceiling, Corona/Plasma screens).
+        sha256: "3d1bb7e0697ef494e652a9b0db2f9c67a4aac94d7f263e861a70935397c3d6f5",
+        label: "nano-mujina v5.0.8",
+    },
+    KnownBundle {
         // SHA-256 for nano-mujina v5.0.5 bundle asset (companion auto-provisioning).
         sha256: "65d39b6d1780b37bfbd6fcaa08ce76958709f80e7f0b4275c30f2a3fdf59f7c6",
         label: "nano-mujina v5.0.5",
@@ -355,7 +360,7 @@ pub async fn fetch_latest_nano3s_bundle() -> Result<String, String> {
         .build()
         .map_err(|e| format!("http client init failed: {e}"))?;
 
-    let url = "https://github.com/IxTechCrypto/mujina/releases/download/v5.0.4/nano-mujina-v5.0.4-bundle.bin";
+    let url = "https://github.com/IxTechCrypto/mujina/releases/download/v5.0.8/nano-mujina-v5.0.8-bundle.bin";
     let resp = client
         .get(url)
         .send()
@@ -375,7 +380,7 @@ pub async fn fetch_latest_nano3s_bundle() -> Result<String, String> {
         .map(|u| std::path::PathBuf::from(u).join("Downloads"))
         .unwrap_or_else(|_| std::path::PathBuf::from("."));
 
-    let target_path = downloads_dir.join("nano-mujina-v5.0.4-bundle.bin");
+    let target_path = downloads_dir.join("nano-mujina-v5.0.8-bundle.bin");
     std::fs::write(&target_path, &bytes)
         .map_err(|e| format!("failed to save bundle to {}: {e}", target_path.display()))?;
 

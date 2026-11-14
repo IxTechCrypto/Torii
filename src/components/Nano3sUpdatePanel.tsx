@@ -241,7 +241,7 @@ export default function Nano3sUpdatePanel() {
               setBundlePath(e.target.value);
               reset();
             }}
-            placeholder="path to nano-mujina-v5.0.4-bundle.bin"
+            placeholder="path to nano-mujina-v5.0.8-bundle.bin"
             disabled={stage === "uploading" || stage === "rebooting"}
           />
         </label>
@@ -253,7 +253,7 @@ export default function Nano3sUpdatePanel() {
             disabled={busy !== null || stage === "uploading" || stage === "rebooting"}
             style={{ borderColor: "var(--cyan)", color: "var(--cyan)" }}
           >
-            {busy === "fetching" ? "Downloading v5.0.4..." : "⬇ Download v5.0.4"}
+            {busy === "fetching" ? "Downloading v5.0.8..." : "⬇ Download v5.0.8"}
           </button>
           <button
             type="button"

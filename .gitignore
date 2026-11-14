@@ -25,3 +25,11 @@ dist-ssr
 
 # Python
 __pycache__/
+
+# Large binaries & release bundles
+*.bin
+*.kdimg
+*.img
+*.zip
+*.exe
+
