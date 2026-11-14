@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   fetchLatestNano3sBundle,
+  getLatestNano3sRelease,
   inspectNano3sBundle,
   nano3sDefaultBundle,
   pollMiner,
   updateNano3sBundle,
 } from "../api";
 import { parseMujinaState, type MinerStats } from "../telemetry";
-import type { BundleInfo } from "../types";
+import type { BundleInfo, LatestNano3sRelease } from "../types";
 import Toggle from "./Toggle";
 
 // Windows' "Copy as path" wraps the path in double quotes.
@@ -43,6 +44,7 @@ export default function Nano3sUpdatePanel() {
   const [token, setToken] = useState("");
   const [bundlePath, setBundlePath] = useState("");
   const [info, setInfo] = useState<BundleInfo | null>(null);
+  const [latestRelease, setLatestRelease] = useState<LatestNano3sRelease | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState<"checking" | "uploading" | "fetching" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,9 +68,15 @@ export default function Nano3sUpdatePanel() {
     }
   }
 
-  // Prepopulate default bundle if found on disk
+  // Prepopulate default bundle if found on disk & discover latest release
   useEffect(() => {
     let cancelled = false;
+    getLatestNano3sRelease()
+      .then((rel) => {
+        if (!cancelled) setLatestRelease(rel);
+      })
+      .catch(() => {});
+
     nano3sDefaultBundle().then((def) => {
       if (!cancelled && def && !bundlePath) {
         setBundlePath(def);
@@ -112,7 +120,7 @@ export default function Nano3sUpdatePanel() {
     setError(null);
     reset();
     try {
-      const downloadedPath = await fetchLatestNano3sBundle();
+      const downloadedPath = await fetchLatestNano3sBundle(latestRelease?.bundle_url ?? undefined);
       setBundlePath(downloadedPath);
       setInfo(await inspectNano3sBundle(cleanPath(downloadedPath)));
     } catch (e) {
@@ -234,14 +242,25 @@ export default function Nano3sUpdatePanel() {
         </label>
 
         <label>
-          Bundle (.bin)
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>Bundle (.bin)</span>
+            {latestRelease && (
+              <span style={{ fontSize: "0.72rem", color: "var(--cyan)", fontFamily: "'Share Tech Mono', monospace" }}>
+                Latest release: <strong>{latestRelease.tag}</strong>
+              </span>
+            )}
+          </div>
           <input
             value={bundlePath}
             onChange={(e) => {
               setBundlePath(e.target.value);
               reset();
             }}
-            placeholder="path to nano-mujina-v5.0.8-bundle.bin"
+            placeholder={
+              latestRelease
+                ? `path to ${latestRelease.bundle_filename}`
+                : "path to nano-mujina-v5.0.8-bundle.bin"
+            }
             disabled={stage === "uploading" || stage === "rebooting"}
           />
         </label>
@@ -253,7 +272,9 @@ export default function Nano3sUpdatePanel() {
             disabled={busy !== null || stage === "uploading" || stage === "rebooting"}
             style={{ borderColor: "var(--cyan)", color: "var(--cyan)" }}
           >
-            {busy === "fetching" ? "Downloading v5.0.8..." : "⬇ Download v5.0.8"}
+            {busy === "fetching"
+              ? `Downloading ${latestRelease?.tag ?? "bundle"}...`
+              : `⬇ Download ${latestRelease?.tag ?? "Latest Release"}`}
           </button>
           <button
             type="button"

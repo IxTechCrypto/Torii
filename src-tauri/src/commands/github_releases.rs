@@ -26,6 +26,104 @@ pub struct AppUpdateInfo {
     pub release_name: String,
 }
 
+#[derive(serde::Serialize, Clone, Debug)]
+pub struct LatestNano3sRelease {
+    pub tag: String,
+    pub release_name: String,
+    pub bundle_url: Option<String>,
+    pub bundle_filename: String,
+    pub kdimg_url: Option<String>,
+    pub html_url: String,
+}
+
+pub fn fallback_nano3s_release() -> LatestNano3sRelease {
+    LatestNano3sRelease {
+        tag: "v5.0.8".to_string(),
+        release_name: "nano-mujina v5.0.8".to_string(),
+        bundle_url: Some(
+            "https://github.com/IxTechCrypto/mujina/releases/download/v5.0.8/nano-mujina-v5.0.8-bundle.bin".to_string(),
+        ),
+        bundle_filename: "nano-mujina-v5.0.8-bundle.bin".to_string(),
+        kdimg_url: Some(
+            "https://github.com/IxTechCrypto/mujina/releases/download/v5.0.8/nano-mujina-v5.0.8-release.kdimg".to_string(),
+        ),
+        html_url: "https://github.com/IxTechCrypto/mujina/releases/tag/v5.0.8".to_string(),
+    }
+}
+
+#[tauri::command]
+pub async fn get_latest_nano3s_release() -> Result<LatestNano3sRelease, String> {
+    let client = reqwest::Client::builder()
+        .user_agent("torii-mujina-provisioner")
+        .timeout(Duration::from_secs(4))
+        .build()
+        .map_err(|e| format!("http client init failed: {e}"))?;
+
+    for &(url, _) in MUJINA_RELEASE_URLS {
+        let Ok(resp) = client
+            .get(url)
+            .header("Accept", "application/vnd.github+json")
+            .send()
+            .await
+        else {
+            continue;
+        };
+
+        if !resp.status().is_success() {
+            continue;
+        }
+
+        let Ok(val) = resp.json::<serde_json::Value>().await else {
+            continue;
+        };
+
+        let Some(releases) = val.as_array() else {
+            continue;
+        };
+
+        for rel in releases {
+            if rel["draft"].as_bool().unwrap_or(false) {
+                continue;
+            }
+            let tag = rel["tag_name"].as_str().unwrap_or("").trim().to_string();
+            if tag.is_empty() {
+                continue;
+            }
+            let release_name = rel["name"].as_str().unwrap_or(&tag).to_string();
+            let html_url = rel["html_url"].as_str().unwrap_or("").to_string();
+            let mut bundle_url = None;
+            let mut bundle_filename = format!("nano-mujina-{tag}-bundle.bin");
+            let mut kdimg_url = None;
+
+            if let Some(assets) = rel["assets"].as_array() {
+                for asset in assets {
+                    let name = asset["name"].as_str().unwrap_or("");
+                    let download_url = asset["browser_download_url"].as_str().map(str::to_string);
+                    if (name.ends_with(".bin") && name.contains("bundle"))
+                        || (bundle_url.is_none() && name.ends_with(".bin"))
+                    {
+                        bundle_url = download_url;
+                        bundle_filename = name.to_string();
+                    } else if name.ends_with(".kdimg") {
+                        kdimg_url = download_url;
+                    }
+                }
+            }
+
+            return Ok(LatestNano3sRelease {
+                tag,
+                release_name,
+                bundle_url,
+                bundle_filename,
+                kdimg_url,
+                html_url,
+            });
+        }
+    }
+
+    Ok(fallback_nano3s_release())
+}
+
 static REMOTE_DIGESTS_CACHE: OnceLock<Mutex<Option<Vec<RemoteAssetDigest>>>> = OnceLock::new();
 
 const MUJINA_RELEASE_URLS: &[(&str, &str)] = &[

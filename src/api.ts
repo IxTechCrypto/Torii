@@ -11,6 +11,7 @@ import type {
   InstallConfig,
   K230BurnDevice,
   KdimgInfo,
+  LatestNano3sRelease,
   Nano3sImageRole,
   ScanResult,
   UsbDeviceRecord,
@@ -98,8 +99,12 @@ export function nano3sDefaultBundle(): Promise<string | null> {
   return invoke("nano3s_default_bundle");
 }
 
-export function fetchLatestNano3sBundle(): Promise<string> {
-  return invoke("fetch_latest_nano3s_bundle");
+export function fetchLatestNano3sBundle(url?: string): Promise<string> {
+  return invoke("fetch_latest_nano3s_bundle", { url });
+}
+
+export function getLatestNano3sRelease(): Promise<LatestNano3sRelease> {
+  return invoke("get_latest_nano3s_release");
 }
 
 // Event contract for the `flash_nano3s` command:

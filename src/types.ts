@@ -175,6 +175,15 @@ export interface AppUpdateInfo {
   release_name: string;
 }
 
+export interface LatestNano3sRelease {
+  tag: string;
+  release_name: string;
+  bundle_url: string | null;
+  bundle_filename: string;
+  kdimg_url: string | null;
+  html_url: string;
+}
+
 // nano-mujina serves its API on port 80 rather than mujina's default 7785.
 export const NANO_MUJINA_API_PORT = 80;
 

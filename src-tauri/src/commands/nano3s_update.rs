@@ -353,22 +353,37 @@ pub fn nano3s_default_bundle() -> Option<String> {
 }
 
 #[tauri::command]
-pub async fn fetch_latest_nano3s_bundle() -> Result<String, String> {
+pub async fn fetch_latest_nano3s_bundle(url: Option<String>) -> Result<String, String> {
     let client = reqwest::Client::builder()
         .user_agent("torii-provisioner")
         .timeout(Duration::from_secs(60))
         .build()
         .map_err(|e| format!("http client init failed: {e}"))?;
 
-    let url = "https://github.com/IxTechCrypto/mujina/releases/download/v5.0.8/nano-mujina-v5.0.8-bundle.bin";
+    let (download_url, filename) = match url.filter(|u| !u.trim().is_empty()) {
+        Some(u) => {
+            let fname = u.split('/').last().unwrap_or("nano-mujina-bundle.bin").to_string();
+            (u, fname)
+        }
+        None => {
+            let latest = crate::commands::github_releases::get_latest_nano3s_release()
+                .await
+                .unwrap_or_else(|_| crate::commands::github_releases::fallback_nano3s_release());
+            let u = latest.bundle_url.unwrap_or_else(|| {
+                "https://github.com/IxTechCrypto/mujina/releases/download/v5.0.8/nano-mujina-v5.0.8-bundle.bin".to_string()
+            });
+            (u, latest.bundle_filename)
+        }
+    };
+
     let resp = client
-        .get(url)
+        .get(&download_url)
         .send()
         .await
-        .map_err(|e| format!("failed to download bundle from {url}: {e}"))?;
+        .map_err(|e| format!("failed to download bundle from {download_url}: {e}"))?;
 
     if !resp.status().is_success() {
-        return Err(format!("download from {url} returned HTTP {}", resp.status()));
+        return Err(format!("download from {download_url} returned HTTP {}", resp.status()));
     }
 
     let bytes = resp
@@ -380,7 +395,7 @@ pub async fn fetch_latest_nano3s_bundle() -> Result<String, String> {
         .map(|u| std::path::PathBuf::from(u).join("Downloads"))
         .unwrap_or_else(|_| std::path::PathBuf::from("."));
 
-    let target_path = downloads_dir.join("nano-mujina-v5.0.8-bundle.bin");
+    let target_path = downloads_dir.join(filename);
     std::fs::write(&target_path, &bytes)
         .map_err(|e| format!("failed to save bundle to {}: {e}", target_path.display()))?;
 

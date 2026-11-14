@@ -2,7 +2,7 @@ mod commands;
 mod external;
 
 use commands::bitaxe_flash::flash_bitaxe_raw;
-use commands::github_releases::check_app_update;
+use commands::github_releases::{check_app_update, get_latest_nano3s_release};
 use commands::install::{install, preview};
 use commands::nano3s::{
     flash_nano3s, inspect_nano3s_image, list_k230_burn_devices, nano3s_default_image,
@@ -35,6 +35,7 @@ pub fn run() {
             update_nano3s_bundle,
             nano3s_default_bundle,
             fetch_latest_nano3s_bundle,
+            get_latest_nano3s_release,
             check_app_update
         ])
         .run(tauri::generate_context!())
