@@ -39,8 +39,8 @@ struct KnownBundle {
 
 const KNOWN_BUNDLES: &[KnownBundle] = &[
     KnownBundle {
-        // SHA-256 for nano-mujina v5.0.8 bundle asset (90C target, -100MHz floor, 140W ceiling, Corona/Plasma screens).
-        sha256: "3d1bb7e0697ef494e652a9b0db2f9c67a4aac94d7f263e861a70935397c3d6f5",
+        // SHA-256 for nano-mujina v5.0.8 bundle asset (90C target, -100MHz floor, 140W ceiling in Target/MaxHash, Corona/Plasma screens).
+        sha256: "304297efcfebfa70e557d0455951d5594089b46d33dd77649b1fd82ab0a93fdd",
         label: "nano-mujina v5.0.8",
     },
     KnownBundle {

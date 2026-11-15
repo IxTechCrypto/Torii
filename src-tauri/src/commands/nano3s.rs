@@ -80,9 +80,9 @@ const KNOWN_IMAGES: &[KnownImage] = &[
     },
     KnownImage {
         // nano-mujina v5.0.8 full-flash image: hardcoded 90C silicon target,
-        // -100MHz per-chip tuning floor, 140W target ceiling, Screen 3 Auto Tuner Corona,
-        // Screen 6 Bitcoin Plasma Disk, size-optimized release build.
-        sha256: "245a12739ebd7a2024a87293081e65312da0e8409d9593a8a6b614893a41023f",
+        // -100MHz per-chip tuning floor, full 140W PSU adoption in Target & MaxHash,
+        // Screen 3 Auto Tuner Corona, Screen 6 Bitcoin Plasma Disk, size-optimized release build.
+        sha256: "a42067113f73db16bf6ba04adcedc3bc0fc61c4e1f7d84b114b46ae4da4dfe52",
         label: "nano-mujina v5.0.8",
         role: Nano3sImageRole::Mujina,
     },
